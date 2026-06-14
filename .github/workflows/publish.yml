@@ -30,7 +30,8 @@ jobs:
       - name: Build all packages
         run: pnpm build
 
+      - name: Configure registry auth
+        run: echo "//npm.pkg.github.com/:_authToken=${{ secrets.GITHUB_TOKEN }}" >> ~/.npmrc
+
       - name: Publish changed packages
         run: pnpm --filter './packages/*' publish --no-git-checks --access public
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
