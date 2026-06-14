@@ -28,10 +28,8 @@ jobs:
       - name: Build all packages
         run: pnpm build
 
-      - name: Configure GitHub Packages auth
-        run: |
-          pnpm config set "@lynkko:registry" "https://npm.pkg.github.com"
-          pnpm config set "//npm.pkg.github.com/:_authToken" "${{ secrets.GITHUB_TOKEN }}"
+      - name: Inject auth token into .npmrc
+        run: sed -i "s|\${GITHUB_TOKEN}|${{ secrets.GITHUB_TOKEN }}|g" .npmrc
 
       - name: Publish changed packages
         run: pnpm --filter './packages/*' publish --no-git-checks --access public
