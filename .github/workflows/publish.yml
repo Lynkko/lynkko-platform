@@ -31,7 +31,9 @@ jobs:
         run: pnpm build
 
       - name: Configure registry auth
-        run: echo "//npm.pkg.github.com/:_authToken=${{ secrets.GITHUB_TOKEN }}" >> ~/.npmrc
+        run: |
+          echo "//npm.pkg.github.com/:_authToken=${{ secrets.GITHUB_TOKEN }}" >> ~/.npmrc
+          echo "//npm.pkg.github.com/:_authToken=${{ secrets.GITHUB_TOKEN }}" >> "$NPM_CONFIG_USERCONFIG"
 
       - name: Publish changed packages
         run: pnpm --filter './packages/*' publish --no-git-checks --access public
