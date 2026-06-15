@@ -1,0 +1,64 @@
+/*
+ * @lynkko/ui — CSS custom properties (design tokens)
+ * Importar en el root de cada app: import '@lynkko/ui/styles.css'
+ * El ThemeProvider sobreescribe --primary, --secondary y --accent en runtime.
+ */
+
+:root {
+  /* Colores base — sobreescritos por ThemeProvider */
+  --primary:            142 72% 29%;   /* Lynkko green: #166534 */
+  --primary-foreground: 0 0% 100%;
+  --primary-50:         142 72% 96%;
+  --primary-100:        142 72% 90%;
+  --primary-200:        142 72% 80%;
+  --primary-900:        142 72% 14%;
+
+  --secondary:            215 28% 17%;  /* slate-800 */
+  --secondary-foreground: 0 0% 100%;
+
+  --accent:            48 96% 53%;   /* yellow-400 */
+  --accent-foreground: 0 0% 0%;
+
+  /* Superficie */
+  --background:         0 0% 100%;
+  --foreground:         222 47% 11%;
+
+  --card:               0 0% 100%;
+  --card-foreground:    222 47% 11%;
+
+  --muted:              210 40% 96%;
+  --muted-foreground:   215 16% 47%;
+
+  /* Estados */
+  --destructive:            0 84% 60%;
+  --destructive-foreground: 0 0% 100%;
+
+  /* Bordes e inputs */
+  --border: 214 32% 91%;
+  --input:  214 32% 91%;
+  --ring:   142 72% 29%;
+
+  /* Radio de bordes — sobreescrito por ThemeProvider */
+  --radius: 8px;
+
+  /* Tipografía */
+  --font-sans: ui-sans-serif, system-ui, -apple-system, sans-serif;
+  --font-mono: ui-monospace, 'Cascadia Code', monospace;
+}
+
+.dark {
+  --background:      222 47% 11%;
+  --foreground:      210 40% 98%;
+
+  --card:            222 47% 13%;
+  --card-foreground: 210 40% 98%;
+
+  --muted:           217 33% 17%;
+  --muted-foreground: 215 20% 65%;
+
+  --border: 217 33% 22%;
+  --input:  217 33% 22%;
+}
+
+/* Reset mínimo */
+*, *::before, *::after { box-sizing: border-box; }
