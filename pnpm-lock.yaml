@@ -38,6 +38,9 @@ importers:
       '@lynkko/platform':
         specifier: workspace:*
         version: link:../../packages/platform
+      '@lynkko/ui':
+        specifier: workspace:*
+        version: link:../../packages/ui
       '@lynkko/utils':
         specifier: workspace:*
         version: link:../../packages/utils

@@ -14,6 +14,7 @@
     "@lynkko/db": "workspace:*",
     "@lynkko/email": "workspace:*",
     "@lynkko/platform": "workspace:*",
+    "@lynkko/ui": "workspace:*",
     "@lynkko/utils": "workspace:*",
     "better-auth": "^1.2.8",
     "drizzle-orm": "^0.45.2",

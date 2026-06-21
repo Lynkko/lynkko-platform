@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
+import { Button, Input } from '@lynkko/ui'
 import { authClient } from '@/lib/auth-client'
 
 export function LoginForm() {
@@ -26,36 +27,30 @@ export function LoginForm() {
   }
 
   return (
-    <form onSubmit={onSubmit} className="bg-white rounded-xl border border-slate-200 p-8 space-y-4 shadow-sm">
-      <div className="space-y-1">
-        <label className="text-sm font-medium text-slate-700">Email</label>
-        <input
+    <form onSubmit={onSubmit} className="bg-card rounded-lg border border-border p-8 space-y-4 shadow-sm">
+      <div className="space-y-1.5">
+        <label className="text-sm font-medium text-foreground">Email</label>
+        <Input
           type="email"
           required
           value={email}
           onChange={(e) => setEmail(e.target.value)}
-          className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-violet-500"
           placeholder="you@lynkko.co"
         />
       </div>
-      <div className="space-y-1">
-        <label className="text-sm font-medium text-slate-700">Contraseña</label>
-        <input
+      <div className="space-y-1.5">
+        <label className="text-sm font-medium text-foreground">Contraseña</label>
+        <Input
           type="password"
           required
           value={password}
           onChange={(e) => setPassword(e.target.value)}
-          className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-violet-500"
         />
       </div>
-      {error && <p className="text-sm text-red-600">{error}</p>}
-      <button
-        type="submit"
-        disabled={loading}
-        className="w-full rounded-lg bg-violet-600 px-4 py-2 text-sm font-medium text-white hover:bg-violet-700 disabled:opacity-50 transition-colors"
-      >
+      {error && <p className="text-sm text-destructive">{error}</p>}
+      <Button type="submit" disabled={loading} size="lg" className="w-full">
         {loading ? 'Ingresando...' : 'Ingresar'}
-      </button>
+      </Button>
     </form>
   )
 }

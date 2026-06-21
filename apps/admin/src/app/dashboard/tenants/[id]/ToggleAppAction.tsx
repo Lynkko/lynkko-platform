@@ -22,7 +22,7 @@ export function ToggleAppAction({ tenantId, appId, enabled }: Props) {
       onClick={toggle}
       disabled={isPending}
       className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors disabled:opacity-50 ${
-        enabled ? 'bg-violet-600' : 'bg-slate-200'
+        enabled ? 'bg-primary' : 'bg-muted'
       }`}
     >
       <span

@@ -8,6 +8,7 @@ const nextConfig: NextConfig = {
     '@lynkko/db',
     '@lynkko/email',
     '@lynkko/platform',
+    '@lynkko/ui',
     '@lynkko/utils',
   ],
 }

@@ -1,0 +1,6 @@
+node_modules
+.git
+apps/admin/.next
+packages/*/dist
+*.log
+.DS_Store

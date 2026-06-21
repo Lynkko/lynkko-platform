@@ -4,3 +4,7 @@ dist/
 *.tsbuildinfo
 .env
 .env.local
+.vercel
+.next/
+.DS_Store
+next-env.d.ts
