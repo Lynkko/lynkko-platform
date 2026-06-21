@@ -1,16 +1,23 @@
+import { platform } from '@/lib/platform'
 import { db, platformSchema } from '@/lib/db'
 import { Badge, Card, CardContent, CardHeader, CardTitle } from '@lynkko/ui'
-import { count } from 'drizzle-orm'
+import { count, eq } from 'drizzle-orm'
+import Link from 'next/link'
 
 export default async function DashboardPage() {
-  const [appsCount, tenantsCount] = await Promise.all([
+  const [appsCount, tenantsCount, subsCount, mrr] = await Promise.all([
     db.select({ c: count() }).from(platformSchema.platformApps),
-    db.select({ c: count() }).from(platformSchema.tenantAppAccess),
+    db.select({ c: count() }).from(platformSchema.tenants),
+    db.select({ c: count() }).from(platformSchema.subscriptions)
+      .where(eq(platformSchema.subscriptions.status, 'active')),
+    platform.getMRR(),
   ])
 
   const stats = [
-    { label: 'Aplicaciones registradas', value: appsCount[0]?.c ?? 0 },
-    { label: 'Accesos de tenant', value: tenantsCount[0]?.c ?? 0 },
+    { label: 'Tenants registrados', value: tenantsCount[0]?.c ?? 0, href: '/dashboard/tenants' },
+    { label: 'Suscripciones activas', value: subsCount[0]?.c ?? 0, href: '/dashboard/billing' },
+    { label: 'Aplicaciones',          value: appsCount[0]?.c ?? 0,  href: '/dashboard/apps' },
+    { label: 'MRR',                   value: formatCOP(mrr),        href: '/dashboard/billing' },
   ]
 
   return (
@@ -19,13 +26,15 @@ export default async function DashboardPage() {
       <p className="text-muted-foreground text-sm mb-8">Centro de control del ecosistema</p>
 
       <div className="grid grid-cols-2 gap-4 mb-8">
-        {stats.map(({ label, value }) => (
-          <Card key={label}>
-            <CardContent className="pt-6">
-              <p className="text-3xl font-bold text-foreground">{value}</p>
-              <p className="text-sm text-muted-foreground mt-1">{label}</p>
-            </CardContent>
-          </Card>
+        {stats.map(({ label, value, href }) => (
+          <Link key={label} href={href}>
+            <Card className="hover:border-primary/40 transition-colors cursor-pointer">
+              <CardContent className="pt-6">
+                <p className="text-3xl font-bold text-foreground">{value}</p>
+                <p className="text-sm text-muted-foreground mt-1">{label}</p>
+              </CardContent>
+            </Card>
+          </Link>
         ))}
       </div>
 
@@ -51,6 +60,11 @@ export default async function DashboardPage() {
       </Card>
     </div>
   )
+}
+
+function formatCOP(n: number): string {
+  if (n === 0) return '$0'
+  return '$' + n.toLocaleString('es-CO')
 }
 
 const ECOSYSTEM_APPS = [
