@@ -1,40 +1,37 @@
 @import "tailwindcss";
 
-/* Design tokens del ecosistema Lynkko */
-@import "@lynkko/ui/styles.css";
-
-/* Escanear clases usadas en @lynkko/ui */
+/* Escanear clases de @lynkko/ui para generarlas en el bundle */
 @source "../../../../packages/ui/src";
 
-/* Mapear design tokens a utilidades Tailwind v4 */
-@theme inline {
-  --color-primary:              hsl(var(--primary));
-  --color-primary-foreground:   hsl(var(--primary-foreground));
-  --color-primary-50:           hsl(var(--primary-50));
-  --color-primary-100:          hsl(var(--primary-100));
-  --color-primary-200:          hsl(var(--primary-200));
-  --color-primary-900:          hsl(var(--primary-900));
+/* Mapear design tokens (--primary etc.) a utilidades Tailwind */
+@theme {
+  --color-primary:                hsl(var(--primary));
+  --color-primary-foreground:     hsl(var(--primary-foreground));
+  --color-primary-50:             hsl(var(--primary-50));
+  --color-primary-100:            hsl(var(--primary-100));
+  --color-primary-200:            hsl(var(--primary-200));
+  --color-primary-900:            hsl(var(--primary-900));
 
-  --color-secondary:            hsl(var(--secondary));
-  --color-secondary-foreground: hsl(var(--secondary-foreground));
+  --color-secondary:              hsl(var(--secondary));
+  --color-secondary-foreground:   hsl(var(--secondary-foreground));
 
-  --color-accent:               hsl(var(--accent));
-  --color-accent-foreground:    hsl(var(--accent-foreground));
+  --color-accent:                 hsl(var(--accent));
+  --color-accent-foreground:      hsl(var(--accent-foreground));
 
-  --color-muted:                hsl(var(--muted));
-  --color-muted-foreground:     hsl(var(--muted-foreground));
+  --color-muted:                  hsl(var(--muted));
+  --color-muted-foreground:       hsl(var(--muted-foreground));
 
-  --color-destructive:          hsl(var(--destructive));
+  --color-destructive:            hsl(var(--destructive));
   --color-destructive-foreground: hsl(var(--destructive-foreground));
 
-  --color-border:               hsl(var(--border));
-  --color-input:                hsl(var(--input));
-  --color-ring:                 hsl(var(--ring));
-  --color-background:           hsl(var(--background));
-  --color-foreground:           hsl(var(--foreground));
+  --color-border:                 hsl(var(--border));
+  --color-input:                  hsl(var(--input));
+  --color-ring:                   hsl(var(--ring));
+  --color-background:             hsl(var(--background));
+  --color-foreground:             hsl(var(--foreground));
 
-  --color-card:                 hsl(var(--card));
-  --color-card-foreground:      hsl(var(--card-foreground));
+  --color-card:                   hsl(var(--card));
+  --color-card-foreground:        hsl(var(--card-foreground));
 
   --radius-lg: var(--radius);
   --radius-md: calc(var(--radius) - 2px);
