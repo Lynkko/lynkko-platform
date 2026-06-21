@@ -5,9 +5,7 @@ import { auth } from './auth'
 export async function requireSuperadmin() {
   const session = await auth.api.getSession({ headers: await headers() })
   if (!session) redirect('/login')
-  // Solo usuarios con role 'superadmin' en la DB de platform pueden acceder
-  const user = session.user as { role?: string }
-  if (user.role !== 'superadmin') redirect('/unauthorized')
+  if ((session.user as { role?: string }).role !== 'superadmin') redirect('/login')
   return session
 }
 

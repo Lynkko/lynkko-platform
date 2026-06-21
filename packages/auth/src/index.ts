@@ -123,6 +123,16 @@ export function createAuth(config: LynkkoAuthConfig) {
     },
 
     ...(Object.keys(socialProviders).length > 0 && { socialProviders }),
+
+    user: {
+      additionalFields: {
+        role: {
+          type: 'string' as const,
+          required: false,
+          defaultValue: 'user',
+        },
+      },
+    },
   })
 }
 
