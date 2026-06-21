@@ -1,5 +1,11 @@
 {
   "$schema": "https://turbo.build/schema.json",
+  "globalEnv": [
+    "PLATFORM_DATABASE_URL",
+    "AUTH_SECRET",
+    "NEXT_PUBLIC_APP_URL",
+    "RESEND_API_KEY"
+  ],
   "tasks": {
     "build": {
       "outputs": ["dist/**", ".next/**", "!.next/cache/**"],
