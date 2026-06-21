@@ -1,5 +1,4 @@
 import { db, platformSchema } from '@/lib/db'
-import { eq, count, and } from 'drizzle-orm'
 import Link from 'next/link'
 
 export default async function TenantsPage() {

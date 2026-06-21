@@ -1,6 +1,5 @@
 import { db, platformSchema } from '@/lib/db'
-import { eq, and } from 'drizzle-orm'
-import { notFound } from 'next/navigation'
+import { eq } from 'drizzle-orm'
 import { ToggleAppAction } from './ToggleAppAction'
 import { LYNKKO_APPS } from '@lynkko/platform'
 
