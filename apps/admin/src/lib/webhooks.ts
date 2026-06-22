@@ -61,7 +61,30 @@ export async function sendWebhook(event: WebhookEvent, appUrl?: string): Promise
 export async function sendWebhookAsync(event: WebhookEvent, appUrl?: string): Promise<void> {
   // Send webhook asynchronously without awaiting
   // This prevents webhook delivery from blocking the request
-  sendWebhook(event, appUrl).catch(error => {
-    console.error('Async webhook error:', error)
-  })
+
+  // Option 1: Direct delivery (old way, for backwards compatibility)
+  // sendWebhook(event, appUrl).catch(error => {
+  //   console.error('Async webhook error:', error)
+  // })
+
+  // Option 2: Queue for retry (new way, Phase 3)
+  try {
+    const { queueWebhook } = await import('./webhook-queue')
+    const url = appUrl || TURNFLOW_WEBHOOK_URL
+    const appId = event.subscription_id ? 'turnflow' : 'unknown'
+
+    await queueWebhook(
+      event.event,
+      event.tenant_id,
+      appId,
+      event,
+      url
+    )
+  } catch (error) {
+    console.error('Failed to queue webhook:', error)
+    // Fallback to direct delivery
+    sendWebhook(event, appUrl).catch(err => {
+      console.error('Async webhook error:', err)
+    })
+  }
 }

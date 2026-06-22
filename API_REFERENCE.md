@@ -364,13 +364,35 @@ curl http://localhost:3000/api/invoices?status=open
 
 ---
 
-## Next Steps (Phase 3)
+## Phase 3: Authentication, Webhooks & Audit (COMPLETE)
 
-- [ ] API key authentication (instead of session-based)
-- [ ] Webhook retry queue and delivery status
+### API Key Management
+
+**POST `/api/api-keys`** — Create API key
+**GET `/api/api-keys?app_id={appId}`** — List keys (doesn't show secret)
+**POST `/api/api-keys/{keyId}/revoke`** — Revoke/deactivate key
+
+### Webhook Delivery Tracking
+
+**GET `/api/cron/webhook-retry`** — Process pending webhooks (cron job)
+**GET `/api/webhooks/deliveries?app_id={appId}&status=failed`** — List deliveries
+**GET `/api/webhooks/deliveries/{deliveryId}`** — Get delivery details
+
+### Audit Trail
+
+**GET `/api/audit-logs?resource_type=plan&resource_id=plan_1`** — Query logs
+**GET `/api/audit-logs/summary?days=7`** — Get audit statistics
+
+---
+
+## Next Steps (Phase 4+)
+
 - [ ] Auto-invoice generation on billing date
 - [ ] Automatic Wompi payment processing
 - [ ] Revenue dashboard and reports
+- [ ] API key scopes (granular permissions)
+- [ ] Webhook filters and performance metrics
+- [ ] Compliance reports (SOC2, HIPAA)
 - [ ] Audit trail table
 - [ ] Rate limiting per tenant/app
 - [ ] Usage analytics

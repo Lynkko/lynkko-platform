@@ -287,8 +287,14 @@ IMPLEMENTATION_SUMMARY.md (this file)
 
 ## Database Impact
 
-### New Tables
-None—all data fits in existing schema
+### New Tables (Phase 3)
+
+**Phase 3 added 3 new tables for enterprise features:**
+- `api_keys` — API key storage (hashed, permissions, rate limits)
+- `webhook_deliveries` — Webhook queue and retry tracking
+- `audit_logs` — Immutable operation audit trail
+
+All Phase 1-2 data fits in existing schema (no changes there).
 
 ### Existing Tables Used
 - `platform_apps` — App registry
