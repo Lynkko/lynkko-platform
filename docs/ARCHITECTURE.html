@@ -1,0 +1,1315 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Lynkko Platform — Arquitectura Técnica</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --green: #166534;
+    --green-light: #dcfce7;
+    --green-mid: #16a34a;
+    --slate: #0f172a;
+    --slate-mid: #334155;
+    --slate-light: #f1f5f9;
+    --border: #e2e8f0;
+    --muted: #64748b;
+    --accent: #facc15;
+    --blue: #2563eb;
+    --purple: #7c3aed;
+    --orange: #b45309;
+    --teal: #0f766e;
+    --pink: #be185d;
+    --red: #dc2626;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Inter', system-ui, sans-serif;
+    font-size: 14px;
+    line-height: 1.6;
+    color: var(--slate);
+    background: #fff;
+  }
+
+  /* ─── Cover ──────────────────────────────────────────────────────────────── */
+  .cover {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: flex-start;
+    padding: 80px;
+    background: var(--slate);
+    color: white;
+    page-break-after: always;
+    position: relative;
+    overflow: hidden;
+  }
+  .cover::before {
+    content: '';
+    position: absolute;
+    top: -100px; right: -100px;
+    width: 500px; height: 500px;
+    background: var(--green);
+    opacity: 0.15;
+    border-radius: 50%;
+  }
+  .cover-tag {
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: 32px;
+  }
+  .cover h1 {
+    font-size: 52px;
+    font-weight: 700;
+    line-height: 1.1;
+    margin-bottom: 16px;
+    max-width: 700px;
+  }
+  .cover-sub {
+    font-size: 20px;
+    color: #94a3b8;
+    margin-bottom: 60px;
+    max-width: 600px;
+    line-height: 1.5;
+  }
+  .cover-meta {
+    display: flex;
+    gap: 48px;
+  }
+  .cover-meta-item label {
+    display: block;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: #64748b;
+    margin-bottom: 4px;
+  }
+  .cover-meta-item span {
+    font-size: 15px;
+    color: #e2e8f0;
+    font-weight: 500;
+  }
+  .cover-logo {
+    position: absolute;
+    bottom: 60px; right: 80px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .cover-logo-mark {
+    width: 40px; height: 40px;
+    background: var(--green);
+    border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .cover-logo-mark svg { width: 24px; height: 24px; }
+  .cover-logo-name {
+    font-size: 24px;
+    font-weight: 700;
+    color: white;
+    letter-spacing: -0.02em;
+  }
+
+  /* ─── Layout ─────────────────────────────────────────────────────────────── */
+  .page { max-width: 900px; margin: 0 auto; padding: 60px 48px; }
+
+  /* ─── TOC ────────────────────────────────────────────────────────────────── */
+  .toc { page-break-after: always; }
+  .toc h2 { font-size: 28px; font-weight: 700; margin-bottom: 32px; color: var(--slate); }
+  .toc ol { list-style: none; }
+  .toc > ol > li { margin-bottom: 6px; }
+  .toc > ol > li > a {
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--slate);
+    text-decoration: none;
+    display: flex;
+    justify-content: space-between;
+    padding: 8px 0;
+    border-bottom: 1px solid var(--border);
+  }
+  .toc > ol > li > a:hover { color: var(--green); }
+  .toc > ol > li > a span { color: var(--muted); font-weight: 400; }
+
+  /* ─── Section headers ────────────────────────────────────────────────────── */
+  .section-header {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin-bottom: 32px;
+    padding-bottom: 16px;
+    border-bottom: 2px solid var(--green);
+  }
+  .section-number {
+    width: 40px; height: 40px;
+    background: var(--green);
+    color: white;
+    border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 16px;
+    font-weight: 700;
+    flex-shrink: 0;
+  }
+  h1.section-title { font-size: 28px; font-weight: 700; color: var(--slate); }
+
+  h2 { font-size: 20px; font-weight: 700; margin: 32px 0 16px; color: var(--slate); }
+  h3 { font-size: 15px; font-weight: 600; margin: 24px 0 12px; color: var(--slate-mid); }
+
+  /* ─── Typography ─────────────────────────────────────────────────────────── */
+  p { margin-bottom: 12px; color: #374151; line-height: 1.7; }
+  strong { font-weight: 600; color: var(--slate); }
+  a { color: var(--green); text-decoration: none; }
+  blockquote {
+    border-left: 3px solid var(--green);
+    padding: 12px 16px;
+    background: var(--green-light);
+    border-radius: 0 6px 6px 0;
+    margin: 16px 0;
+    color: var(--green);
+    font-size: 13px;
+  }
+
+  /* ─── Code ───────────────────────────────────────────────────────────────── */
+  code {
+    font-family: 'JetBrains Mono', 'Cascadia Code', monospace;
+    font-size: 12px;
+    background: var(--slate-light);
+    padding: 2px 6px;
+    border-radius: 4px;
+    color: var(--green);
+  }
+  pre {
+    background: #0f172a;
+    color: #e2e8f0;
+    padding: 20px 24px;
+    border-radius: 8px;
+    overflow-x: auto;
+    margin: 16px 0;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    line-height: 1.7;
+  }
+  pre code { background: none; color: #e2e8f0; padding: 0; }
+  .comment { color: #64748b; }
+  .kw { color: #93c5fd; }
+  .str { color: #86efac; }
+  .type { color: #fbbf24; }
+  .fn { color: #f9a8d4; }
+
+  /* ─── Tables ─────────────────────────────────────────────────────────────── */
+  table { width: 100%; border-collapse: collapse; margin: 16px 0; font-size: 13px; }
+  th {
+    background: var(--slate-light);
+    padding: 10px 14px;
+    text-align: left;
+    font-weight: 600;
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--muted);
+    border-bottom: 2px solid var(--border);
+  }
+  td {
+    padding: 10px 14px;
+    border-bottom: 1px solid var(--border);
+    vertical-align: top;
+  }
+  tr:last-child td { border-bottom: none; }
+  tr:hover td { background: #f8fafc; }
+  td code { font-size: 11px; }
+
+  /* ─── Package cards ──────────────────────────────────────────────────────── */
+  .pkg-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    gap: 12px;
+    margin: 16px 0;
+  }
+  .pkg-card {
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 14px 16px;
+    position: relative;
+  }
+  .pkg-name { font-family: 'JetBrains Mono', monospace; font-size: 12px; font-weight: 600; margin-bottom: 4px; }
+  .pkg-desc { font-size: 12px; color: var(--muted); line-height: 1.5; }
+  .pkg-layer {
+    position: absolute;
+    top: 10px; right: 10px;
+    font-size: 9px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    padding: 2px 6px;
+    border-radius: 4px;
+  }
+
+  .l1 .pkg-name { color: var(--green); }
+  .l1 { border-color: #bbf7d0; }
+  .l1 .pkg-layer { background: #dcfce7; color: var(--green); }
+
+  .l2 .pkg-name { color: var(--blue); }
+  .l2 { border-color: #bfdbfe; }
+  .l2 .pkg-layer { background: #dbeafe; color: var(--blue); }
+
+  .l3 .pkg-name { color: var(--purple); }
+  .l3 { border-color: #ddd6fe; }
+  .l3 .pkg-layer { background: #ede9fe; color: var(--purple); }
+
+  .l4 .pkg-name { color: var(--orange); }
+  .l4 { border-color: #fde68a; }
+  .l4 .pkg-layer { background: #fef3c7; color: var(--orange); }
+
+  .l5 .pkg-name { color: var(--teal); }
+  .l5 { border-color: #99f6e4; }
+  .l5 .pkg-layer { background: #ccfbf1; color: var(--teal); }
+
+  .l6 .pkg-name { color: var(--pink); }
+  .l6 { border-color: #fbcfe8; }
+  .l6 .pkg-layer { background: #fce7f3; color: var(--pink); }
+
+  .l7 .pkg-name { color: var(--slate-mid); }
+  .l7 { border-color: #cbd5e1; }
+  .l7 .pkg-layer { background: var(--slate-light); color: var(--slate-mid); }
+
+  /* ─── Diagrams ───────────────────────────────────────────────────────────── */
+  .diagram-wrap {
+    background: #f8fafc;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 24px;
+    margin: 24px 0;
+    overflow-x: auto;
+  }
+  .diagram-title {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    margin-bottom: 16px;
+  }
+
+  /* ─── Info boxes ─────────────────────────────────────────────────────────── */
+  .info {
+    background: #eff6ff;
+    border: 1px solid #bfdbfe;
+    border-radius: 8px;
+    padding: 14px 16px;
+    margin: 16px 0;
+    font-size: 13px;
+    color: var(--blue);
+  }
+  .warning {
+    background: #fffbeb;
+    border: 1px solid #fde68a;
+    border-radius: 8px;
+    padding: 14px 16px;
+    margin: 16px 0;
+    font-size: 13px;
+    color: #92400e;
+  }
+  .success {
+    background: var(--green-light);
+    border: 1px solid #bbf7d0;
+    border-radius: 8px;
+    padding: 14px 16px;
+    margin: 16px 0;
+    font-size: 13px;
+    color: var(--green);
+  }
+
+  /* ─── Section divider ────────────────────────────────────────────────────── */
+  .section { page-break-before: always; padding-top: 60px; margin-bottom: 48px; }
+  .section:first-of-type { page-break-before: auto; }
+
+  /* ─── Print ──────────────────────────────────────────────────────────────── */
+  @media print {
+    body { font-size: 12px; }
+    .cover { min-height: auto; padding: 60px; }
+    .cover::before { display: none; }
+    .section { page-break-before: always; }
+    pre { font-size: 10px; border: 1px solid #ccc; }
+    .diagram-wrap { border: 1px solid #ccc; }
+    a { color: inherit; text-decoration: none; }
+    @page { margin: 20mm; }
+    @page :first { margin: 0; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ═══════════════════════════════════════════════════════════════ COVER ══ -->
+<div class="cover">
+  <div class="cover-tag">Documento técnico oficial — Confidencial</div>
+  <h1>Lynkko Platform<br>Arquitectura Técnica</h1>
+  <p class="cover-sub">Referencia completa del monorepo <code style="background:rgba(255,255,255,0.1);color:#86efac">lynkko-platform</code>: 20 paquetes <code style="background:rgba(255,255,255,0.1);color:#86efac">@lynkko/*</code>, contratos de API, diagramas, schemas de base de datos e integración con apps del ecosistema.</p>
+  <div class="cover-meta">
+    <div class="cover-meta-item"><label>Versión</label><span>v1.0 — junio 2026</span></div>
+    <div class="cover-meta-item"><label>Paquetes</label><span>20 @lynkko/*</span></div>
+    <div class="cover-meta-item"><label>Apps</label><span>6 aplicaciones SaaS</span></div>
+    <div class="cover-meta-item"><label>Stack</label><span>Next.js 15 · Neon · Drizzle · Better Auth</span></div>
+  </div>
+  <div class="cover-logo">
+    <div class="cover-logo-mark">
+      <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round">
+        <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/>
+      </svg>
+    </div>
+    <span class="cover-logo-name">Lynkko</span>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════════════════════════════ TOC ═══ -->
+<div class="page toc">
+  <h2>Índice de contenidos</h2>
+  <ol>
+    <li><a href="#s1">1. Visión general <span>Ecosistema, stack, propósito</span></a></li>
+    <li><a href="#s2">2. Estructura del monorepo <span>Turborepo + pnpm, árbol de dependencias</span></a></li>
+    <li><a href="#s-diagrams">3. Diagramas de arquitectura <span>Package graph, theme flow, offline sync</span></a></li>
+    <li><a href="#s3">4. Registry — GitHub Packages <span>Configuración, tokens, ERR_INVALID_THIS fix</span></a></li>
+    <li><a href="#s4">5. Pipeline de build y publicación <span>tsup, GitHub Actions CI/CD</span></a></li>
+    <li><a href="#s5">6. Catálogo de paquetes <span>20 paquetes en 7 capas</span></a></li>
+    <li><a href="#s6">7. Contratos de API <span>Firmas TypeScript de cada paquete</span></a></li>
+    <li><a href="#s7">8. Patrones transversales <span>Multi-tenancy, theming, offline, audit</span></a></li>
+    <li><a href="#s8">9. Schemas de base de datos <span>SQL de auth, notifications, audit, platform</span></a></li>
+    <li><a href="#s9">10. Integración en una app Next.js <span>Setup completo paso a paso</span></a></li>
+    <li><a href="#s10">11. Variables de entorno <span>Referencia completa por paquete</span></a></li>
+    <li><a href="#s11">12. Aplicaciones del ecosistema <span>8 apps — definiciones OS v0.4, ICPs, paquetes</span></a></li>
+    <li><a href="#s12">13. Bundles del ecosistema <span>7 paquetes comerciales y habilitación técnica</span></a></li>
+    <li><a href="#s13">14. Agente Comercial IA <span>Especificación técnica, guardrails, integración @lynkko/ai</span></a></li>
+    <li><a href="#s14">15. Modelo de datos PEC <span>Campos, pipeline de etapas y tags ICP</span></a></li>
+  </ol>
+</div>
+
+<!-- ══════════════════════════════════════════════════ S1: VISIÓN GENERAL ══ -->
+<div class="page section" id="s1">
+  <div class="section-header">
+    <div class="section-number">1</div>
+    <h1 class="section-title">Visión general</h1>
+  </div>
+
+  <h2>Propósito</h2>
+  <p><code>lynkko-platform</code> es una <strong>librería de infraestructura compartida</strong> para el ecosistema Lynkko de SaaS B2B para LATAM. No es una aplicación desplegable — es la capa de paquetes que todas las apps consumen.</p>
+
+  <p style="margin-top:16px"><strong>Lynkko Ecosystem OS v0.4</strong> posiciona a Lynkko como la <strong>capa de operación para el éxito comercial en LATAM</strong>: prospección, ejecución de ventas, incentivos internos, comunicación con clientes, membresías y fidelización, centros de ayuda, y cumplimiento de facturación electrónica.</p>
+
+  <blockquote style="border-left:4px solid #facc15;margin:20px 0;padding:12px 20px;background:#fffbeb;border-radius:0 8px 8px 0;font-style:italic;color:#92400e">"Lynkko ayuda a negocios en LATAM a vender más con menos desorden."</blockquote>
+
+  <p>El ecosistema opera en dos mundos comerciales: <strong>Enterprise</strong> (Lynkko App, Incentivos, Customer, ClubPass, Help, Facturación) y <strong>Pequeños negocios</strong> (Turnflow, ClubPass, Facturación, Help). Cada producto puede venderse de forma independiente, pero los productos conectados incrementan el valor total.</p>
+
+  <h2>Ecosistema de aplicaciones</h2>
+  <table>
+    <thead><tr><th>App ID</th><th>Nombre comercial</th><th>Repo</th><th>Working definition (OS v0.4)</th></tr></thead>
+    <tbody>
+      <tr><td><code>pec</code></td><td><strong>Lynkko App</strong></td><td>Lynkko/lynkko-app</td><td>Ejecución comercial, visibilidad del proceso de ventas y actividad del equipo en tiempo real. <strong>Plataforma de Éxito Comercial — no CRM.</strong></td></tr>
+      <tr><td><code>admin</code></td><td><strong>Lynkko Superadmin</strong></td><td>Lynkko/lynkko-platform-admin</td><td>Administración de tenants, apps habilitadas, temas, módulos y billing. Acceso exclusivo del equipo Lynkko.</td></tr>
+      <tr><td><code>incentivos</code></td><td><strong>Lynkko Incentivos</strong></td><td>Lynkko/lynkko-incentivos</td><td>Motivación, reconocimiento y gamificación para <strong>equipos internos</strong>. No es fidelización de clientes externos.</td></tr>
+      <tr><td><code>turnflow</code></td><td><strong>Turnflow by Lynkko</strong></td><td>Lynkko/lynkko-turnflow</td><td>SaaS simple para negocios locales: clientes, reservas, pedidos, turnos y seguimiento de prospectos.</td></tr>
+      <tr><td><code>clubpass</code></td><td><strong>ClubPass by Lynkko</strong></td><td>gvelasquez85/clubpass</td><td>Membresías y fidelización para <strong>clientes externos</strong>: clubes, beneficios, recurrencia y redemptions.</td></tr>
+      <tr><td><code>customer</code></td><td><strong>Lynkko Customer</strong></td><td><em>pendiente</em></td><td>Gestión de solicitudes y PQRS con trazabilidad interna y visibilidad externa para el cliente.</td></tr>
+      <tr><td><code>help</code></td><td><strong>Lynkko Help</strong></td><td><em>pendiente</em></td><td>Centro de ayuda, FAQs y base de conocimiento self-service. Evolución: diagnóstico guiado + escalado a Customer.</td></tr>
+      <tr><td><code>facturacion</code></td><td><strong>Lynkko Facturación</strong></td><td><em>pendiente</em></td><td>Facturación electrónica DIAN (Colombia) desde CSV, API, sistemas externos o eventos del ecosistema.</td></tr>
+    </tbody>
+  </table>
+  <p style="font-size:13px;color:#64748b;margin-top:10px">⚠ <strong>Distinción clave:</strong> Incentivos reconoce equipos internos; ClubPass reconoce clientes externos. Son complementarios, no sustitutos.</p>
+
+  <h2>Stack tecnológico</h2>
+  <table>
+    <thead><tr><th>Capa</th><th>Tecnología</th></tr></thead>
+    <tbody>
+      <tr><td>Monorepo</td><td>Turborepo + pnpm workspaces</td></tr>
+      <tr><td>Build</td><td>tsup — genera CJS + ESM + DTS por paquete</td></tr>
+      <tr><td>Runtime</td><td>Node.js 18+ (fetch nativo, Web Push API)</td></tr>
+      <tr><td>Base de datos</td><td>Neon PostgreSQL serverless + Drizzle ORM</td></tr>
+      <tr><td>Auth</td><td>Better Auth con Drizzle adapter</td></tr>
+      <tr><td>UI</td><td>React 18 + Radix UI + Tailwind CSS + cva</td></tr>
+      <tr><td>Email</td><td>Resend</td></tr>
+      <tr><td>Push</td><td>Web Push API (VAPID)</td></tr>
+      <tr><td>Pagos</td><td>Wompi (Colombia)</td></tr>
+      <tr><td>AI</td><td>OpenAI SDK (GPT-4o-mini)</td></tr>
+      <tr><td>Registry</td><td>GitHub Packages — npm.pkg.github.com</td></tr>
+      <tr><td>Deploy</td><td>Vercel (cada app independiente)</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<!-- ══════════════════════════════════════════════════ S2: MONOREPO ═══════ -->
+<div class="page section" id="s2">
+  <div class="section-header">
+    <div class="section-number">2</div>
+    <h1 class="section-title">Estructura del monorepo</h1>
+  </div>
+
+  <pre><code>lynkko-platform/
+├── packages/
+│   ├── utils/            <span class="comment"># L1 — Foundation</span>
+│   ├── db/               <span class="comment"># L1 — Foundation</span>
+│   ├── auth/             <span class="comment"># L2 — Auth & Security</span>
+│   ├── api-keys/         <span class="comment"># L2 — Auth & Security</span>
+│   ├── email/            <span class="comment"># L3 — Communication</span>
+│   ├── push/             <span class="comment"># L3 — Communication</span>
+│   ├── webhooks/         <span class="comment"># L3 — Communication</span>
+│   ├── notifications/    <span class="comment"># L3 — Communication</span>
+│   ├── wompi/            <span class="comment"># L4 — Payments</span>
+│   ├── billing/          <span class="comment"># L4 — Payments</span>
+│   ├── currency/         <span class="comment"># L5 — Localization</span>
+│   ├── i18n/             <span class="comment"># L5 — Localization</span>
+│   ├── dian/             <span class="comment"># L5 — Localization</span>
+│   ├── qr/               <span class="comment"># L5 — Localization</span>
+│   ├── ai/               <span class="comment"># L6 — Vertical</span>
+│   ├── wallets/          <span class="comment"># L6 — Vertical</span>
+│   ├── audit/            <span class="comment"># L6 — Vertical</span>
+│   ├── platform/         <span class="comment"># L7 — Ecosystem</span>
+│   ├── offline-sync/     <span class="comment"># L7 — Ecosystem</span>
+│   └── ui/               <span class="comment"># L7 — Ecosystem</span>
+├── docs/
+├── turbo.json
+├── pnpm-workspace.yaml
+└── package.json</code></pre>
+
+  <h2>Dependencias entre paquetes</h2>
+  <div class="success">
+    Existe <strong>exactamente una</strong> dependencia inter-paquete: <code>@lynkko/ui → @lynkko/i18n</code>.<br>
+    Todos los demás paquetes son completamente independientes entre sí.
+  </div>
+  <p><code>@lynkko/ui</code> usa <code>getInitials()</code> de <code>@lynkko/i18n</code> para el componente <code>UserAvatar</code>. <strong>AppTheme</strong> se define de forma idéntica en <code>@lynkko/ui</code> y <code>@lynkko/platform</code> — esta duplicación intencional evita que <code>ui</code> dependa de <code>platform</code> (que tiene <code>drizzle-orm</code> como peer dep).</p>
+
+  <h2>turbo.json — orden de build</h2>
+  <pre><code>{
+  <span class="str">"tasks"</span>: {
+    <span class="str">"build"</span>: {
+      <span class="str">"outputs"</span>: [<span class="str">"dist/**"</span>],
+      <span class="str">"dependsOn"</span>: [<span class="str">"^build"</span>]  <span class="comment">// ← builds dependencias primero</span>
+    }
+  }
+}</code></pre>
+  <p>Turborepo detecta que <code>@lynkko/ui</code> depende de <code>@lynkko/i18n</code> y construye i18n primero. Los demás 18 paquetes se buildean en paralelo.</p>
+</div>
+
+<!-- ══════════════════════════════════════════════════ S-DIAGRAMS ═════════ -->
+<div class="page section" id="s-diagrams">
+  <div class="section-header">
+    <div class="section-number">3</div>
+    <h1 class="section-title">Diagramas de arquitectura</h1>
+  </div>
+
+  <h2>3.1 Package Graph — 20 paquetes en 7 capas</h2>
+  <div class="diagram-wrap">
+    <div class="diagram-title">Dependencias entre paquetes @lynkko/*</div>
+    <svg viewBox="0 0 860 600" xmlns="http://www.w3.org/2000/svg" font-family="'JetBrains Mono', monospace" font-size="11" style="width:100%;max-width:860px">
+      <text x="14" y="72"  fill="#64748b" font-size="9.5" font-weight="600" letter-spacing="0.08em">L1 · FOUNDATION</text>
+      <text x="14" y="148" fill="#64748b" font-size="9.5" font-weight="600" letter-spacing="0.08em">L2 · AUTH &amp; SECURITY</text>
+      <text x="14" y="224" fill="#64748b" font-size="9.5" font-weight="600" letter-spacing="0.08em">L3 · COMMUNICATION</text>
+      <text x="14" y="300" fill="#64748b" font-size="9.5" font-weight="600" letter-spacing="0.08em">L4 · PAYMENTS</text>
+      <text x="14" y="376" fill="#64748b" font-size="9.5" font-weight="600" letter-spacing="0.08em">L5 · LOCALIZATION</text>
+      <text x="14" y="452" fill="#64748b" font-size="9.5" font-weight="600" letter-spacing="0.08em">L6 · VERTICAL</text>
+      <text x="14" y="528" fill="#64748b" font-size="9.5" font-weight="600" letter-spacing="0.08em">L7 · ECOSYSTEM</text>
+      <line x1="144" y1="54"  x2="850" y2="54"  stroke="#e2e8f0" stroke-width="1"/>
+      <line x1="144" y1="130" x2="850" y2="130" stroke="#e2e8f0" stroke-width="1"/>
+      <line x1="144" y1="206" x2="850" y2="206" stroke="#e2e8f0" stroke-width="1"/>
+      <line x1="144" y1="282" x2="850" y2="282" stroke="#e2e8f0" stroke-width="1"/>
+      <line x1="144" y1="358" x2="850" y2="358" stroke="#e2e8f0" stroke-width="1"/>
+      <line x1="144" y1="434" x2="850" y2="434" stroke="#e2e8f0" stroke-width="1"/>
+      <line x1="144" y1="510" x2="850" y2="510" stroke="#e2e8f0" stroke-width="1"/>
+      <line x1="144" y1="586" x2="850" y2="586" stroke="#e2e8f0" stroke-width="1"/>
+      <line x1="144" y1="40" x2="144" y2="600" stroke="#e2e8f0" stroke-width="1"/>
+      <!-- L1 -->
+      <rect x="158" y="60" width="88" height="32" rx="5" fill="#dcfce7" stroke="#166534" stroke-width="1.5"/><text x="202" y="80" fill="#166534" text-anchor="middle" font-weight="700">utils</text>
+      <rect x="256" y="60" width="88" height="32" rx="5" fill="#dcfce7" stroke="#166534" stroke-width="1.5"/><text x="300" y="80" fill="#166534" text-anchor="middle" font-weight="700">db</text>
+      <!-- L2 -->
+      <rect x="158" y="136" width="88" height="32" rx="5" fill="#dbeafe" stroke="#2563eb" stroke-width="1.5"/><text x="202" y="156" fill="#2563eb" text-anchor="middle" font-weight="700">auth</text>
+      <rect x="256" y="136" width="88" height="32" rx="5" fill="#dbeafe" stroke="#2563eb" stroke-width="1.5"/><text x="300" y="156" fill="#2563eb" text-anchor="middle" font-weight="700">api-keys</text>
+      <!-- L3 -->
+      <rect x="158" y="212" width="88" height="32" rx="5" fill="#ede9fe" stroke="#7c3aed" stroke-width="1.5"/><text x="202" y="232" fill="#7c3aed" text-anchor="middle" font-weight="700">email</text>
+      <rect x="256" y="212" width="88" height="32" rx="5" fill="#ede9fe" stroke="#7c3aed" stroke-width="1.5"/><text x="300" y="232" fill="#7c3aed" text-anchor="middle" font-weight="700">push</text>
+      <rect x="354" y="212" width="88" height="32" rx="5" fill="#ede9fe" stroke="#7c3aed" stroke-width="1.5"/><text x="398" y="232" fill="#7c3aed" text-anchor="middle" font-weight="700">webhooks</text>
+      <rect x="452" y="212" width="108" height="32" rx="5" fill="#ede9fe" stroke="#7c3aed" stroke-width="1.5"/><text x="506" y="232" fill="#7c3aed" text-anchor="middle" font-weight="700">notifications</text>
+      <!-- L4 -->
+      <rect x="158" y="288" width="88" height="32" rx="5" fill="#fef3c7" stroke="#b45309" stroke-width="1.5"/><text x="202" y="308" fill="#b45309" text-anchor="middle" font-weight="700">wompi</text>
+      <rect x="256" y="288" width="88" height="32" rx="5" fill="#fef3c7" stroke="#b45309" stroke-width="1.5"/><text x="300" y="308" fill="#b45309" text-anchor="middle" font-weight="700">billing</text>
+      <!-- L5 -->
+      <rect x="158" y="364" width="88" height="32" rx="5" fill="#ccfbf1" stroke="#0f766e" stroke-width="1.5"/><text x="202" y="384" fill="#0f766e" text-anchor="middle" font-weight="700">currency</text>
+      <rect x="256" y="364" width="88" height="32" rx="5" fill="#ccfbf1" stroke="#0f766e" stroke-width="2"/><text x="300" y="384" fill="#0f766e" text-anchor="middle" font-weight="700">i18n</text>
+      <rect x="354" y="364" width="88" height="32" rx="5" fill="#ccfbf1" stroke="#0f766e" stroke-width="1.5"/><text x="398" y="384" fill="#0f766e" text-anchor="middle" font-weight="700">dian</text>
+      <rect x="452" y="364" width="88" height="32" rx="5" fill="#ccfbf1" stroke="#0f766e" stroke-width="1.5"/><text x="496" y="384" fill="#0f766e" text-anchor="middle" font-weight="700">qr</text>
+      <!-- L6 -->
+      <rect x="158" y="440" width="88" height="32" rx="5" fill="#fce7f3" stroke="#be185d" stroke-width="1.5"/><text x="202" y="460" fill="#be185d" text-anchor="middle" font-weight="700">ai</text>
+      <rect x="256" y="440" width="88" height="32" rx="5" fill="#fce7f3" stroke="#be185d" stroke-width="1.5"/><text x="300" y="460" fill="#be185d" text-anchor="middle" font-weight="700">wallets</text>
+      <rect x="354" y="440" width="88" height="32" rx="5" fill="#fce7f3" stroke="#be185d" stroke-width="1.5"/><text x="398" y="460" fill="#be185d" text-anchor="middle" font-weight="700">audit</text>
+      <!-- L7 -->
+      <rect x="158" y="516" width="88" height="32" rx="5" fill="#f1f5f9" stroke="#334155" stroke-width="1.5"/><text x="202" y="536" fill="#334155" text-anchor="middle" font-weight="700">platform</text>
+      <rect x="256" y="516" width="108" height="32" rx="5" fill="#f1f5f9" stroke="#334155" stroke-width="1.5"/><text x="310" y="536" fill="#334155" text-anchor="middle" font-weight="700">offline-sync</text>
+      <rect x="374" y="516" width="88" height="32" rx="5" fill="#f1f5f9" stroke="#334155" stroke-width="2"/><text x="418" y="536" fill="#334155" text-anchor="middle" font-weight="700">ui</text>
+      <!-- ui → i18n arrow -->
+      <defs><marker id="arr" markerWidth="7" markerHeight="5" refX="7" refY="2.5" orient="auto"><polygon points="0 0,7 2.5,0 5" fill="#0f766e"/></marker></defs>
+      <path d="M418 516 C418 488 300 488 300 396" fill="none" stroke="#0f766e" stroke-width="1.8" stroke-dasharray="5,3" marker-end="url(#arr)"/>
+      <rect x="336" y="478" width="58" height="16" rx="3" fill="white" stroke="#0f766e" stroke-width="0.5"/>
+      <text x="365" y="490" fill="#0f766e" text-anchor="middle" font-size="9.5" font-weight="600">usa i18n</text>
+    </svg>
+  </div>
+
+  <h2>3.2 Flujo de resolución de tema por tenant</h2>
+  <div class="diagram-wrap">
+    <div class="diagram-title">Desde la DB hasta los componentes de Tailwind</div>
+    <svg viewBox="0 0 820 220" xmlns="http://www.w3.org/2000/svg" font-family="'Inter', sans-serif" font-size="11" style="width:100%;max-width:820px">
+      <defs><marker id="a2" markerWidth="7" markerHeight="5" refX="7" refY="2.5" orient="auto"><polygon points="0 0,7 2.5,0 5" fill="#94a3b8"/></marker></defs>
+      <!-- Platform DB -->
+      <rect x="10" y="60" width="130" height="60" rx="8" fill="#dbeafe" stroke="#2563eb" stroke-width="1.5"/>
+      <text x="75" y="85" text-anchor="middle" fill="#2563eb" font-weight="700" font-size="12">Platform DB</text>
+      <text x="75" y="100" text-anchor="middle" fill="#2563eb" font-size="9.5">tenant_app_access</text>
+      <text x="75" y="113" text-anchor="middle" fill="#2563eb" font-size="9.5">theme: jsonb</text>
+      <!-- Arrow -->
+      <line x1="140" y1="90" x2="170" y2="90" stroke="#94a3b8" stroke-width="1.5" marker-end="url(#a2)"/>
+      <text x="155" y="83" text-anchor="middle" fill="#94a3b8" font-size="8.5">getAppTheme</text>
+      <!-- Next.js Server -->
+      <rect x="170" y="60" width="130" height="60" rx="8" fill="#ede9fe" stroke="#7c3aed" stroke-width="1.5"/>
+      <text x="235" y="85" text-anchor="middle" fill="#7c3aed" font-weight="700" font-size="12">Next.js Server</text>
+      <text x="235" y="100" text-anchor="middle" fill="#7c3aed" font-size="9.5">RootLayout async</text>
+      <text x="235" y="113" text-anchor="middle" fill="#7c3aed" font-size="9.5">platform.getAppTheme()</text>
+      <!-- Arrow -->
+      <line x1="300" y1="90" x2="330" y2="90" stroke="#94a3b8" stroke-width="1.5" marker-end="url(#a2)"/>
+      <text x="315" y="83" text-anchor="middle" fill="#94a3b8" font-size="8.5">AppTheme</text>
+      <!-- ThemeProvider -->
+      <rect x="330" y="60" width="140" height="60" rx="8" fill="#dcfce7" stroke="#166534" stroke-width="1.5"/>
+      <text x="400" y="82" text-anchor="middle" fill="#166534" font-weight="700" font-size="12">ThemeProvider</text>
+      <text x="400" y="97" text-anchor="middle" fill="#166534" font-size="9.5">@lynkko/ui</text>
+      <text x="400" y="112" text-anchor="middle" fill="#166534" font-size="9.5">hexToHsl + setProperty</text>
+      <!-- Arrow -->
+      <line x1="470" y1="90" x2="500" y2="90" stroke="#94a3b8" stroke-width="1.5" marker-end="url(#a2)"/>
+      <!-- CSS Vars -->
+      <rect x="500" y="60" width="140" height="60" rx="8" fill="#fef3c7" stroke="#b45309" stroke-width="1.5"/>
+      <text x="570" y="79" text-anchor="middle" fill="#b45309" font-weight="700" font-size="11">CSS Custom Props</text>
+      <text x="570" y="93" text-anchor="middle" fill="#b45309" font-size="9">--primary: 142 72% 29%</text>
+      <text x="570" y="106" text-anchor="middle" fill="#b45309" font-size="9">--secondary --accent</text>
+      <text x="570" y="119" text-anchor="middle" fill="#b45309" font-size="9">--radius --primary-50/900</text>
+      <!-- Arrow -->
+      <line x1="640" y1="90" x2="670" y2="90" stroke="#94a3b8" stroke-width="1.5" marker-end="url(#a2)"/>
+      <!-- Tailwind -->
+      <rect x="670" y="60" width="140" height="60" rx="8" fill="#ccfbf1" stroke="#0f766e" stroke-width="1.5"/>
+      <text x="740" y="82" text-anchor="middle" fill="#0f766e" font-weight="700" font-size="12">Tailwind + UI</text>
+      <text x="740" y="97" text-anchor="middle" fill="#0f766e" font-size="9.5">bg-primary / text-primary</text>
+      <text x="740" y="112" text-anchor="middle" fill="#0f766e" font-size="9.5">Button, Card, Badge…</text>
+      <!-- Bottom note -->
+      <text x="410" y="165" text-anchor="middle" fill="#64748b" font-size="10">Cada tenant tiene colores propios configurados desde el superadmin de Lynkko Platform</text>
+      <text x="410" y="180" text-anchor="middle" fill="#64748b" font-size="10">El cambio de tema no requiere redeploy — se aplica en runtime via CSS custom properties</text>
+    </svg>
+  </div>
+
+  <h2>3.3 Arquitectura offline-first</h2>
+  <div class="diagram-wrap">
+    <div class="diagram-title">Flujo de mutaciones con soporte offline — @lynkko/offline-sync</div>
+    <svg viewBox="0 0 820 300" xmlns="http://www.w3.org/2000/svg" font-family="'Inter', sans-serif" font-size="11" style="width:100%;max-width:820px">
+      <defs>
+        <marker id="ag" markerWidth="7" markerHeight="5" refX="7" refY="2.5" orient="auto"><polygon points="0 0,7 2.5,0 5" fill="#166534"/></marker>
+        <marker id="ar" markerWidth="7" markerHeight="5" refX="7" refY="2.5" orient="auto"><polygon points="0 0,7 2.5,0 5" fill="#dc2626"/></marker>
+        <marker id="ag2" markerWidth="7" markerHeight="5" refX="7" refY="2.5" orient="auto"><polygon points="0 0,7 2.5,0 5" fill="#94a3b8"/></marker>
+      </defs>
+      <!-- User Action -->
+      <rect x="10" y="40" width="100" height="40" rx="7" fill="#dbeafe" stroke="#2563eb" stroke-width="1.5"/>
+      <text x="60" y="58" text-anchor="middle" fill="#2563eb" font-weight="700">User Action</text>
+      <text x="60" y="72" text-anchor="middle" fill="#2563eb" font-size="9.5">create/update/delete</text>
+      <line x1="110" y1="60" x2="138" y2="60" stroke="#94a3b8" stroke-width="1.5" marker-end="url(#ag2)"/>
+      <!-- enqueue -->
+      <rect x="138" y="40" width="110" height="40" rx="7" fill="#ede9fe" stroke="#7c3aed" stroke-width="1.5"/>
+      <text x="193" y="58" text-anchor="middle" fill="#7c3aed" font-weight="700">enqueue()</text>
+      <text x="193" y="72" text-anchor="middle" fill="#7c3aed" font-size="9.5">useOfflineSync</text>
+      <line x1="248" y1="60" x2="276" y2="60" stroke="#94a3b8" stroke-width="1.5" marker-end="url(#ag2)"/>
+      <!-- isOnline? -->
+      <polygon points="326,40 376,60 326,80 276,60" fill="#f1f5f9" stroke="#94a3b8" stroke-width="1.5"/>
+      <text x="326" y="57" text-anchor="middle" fill="#374151" font-weight="700" font-size="10">isOnline</text>
+      <text x="326" y="70" text-anchor="middle" fill="#374151" font-size="9.5">?</text>
+      <!-- YES → API -->
+      <line x1="376" y1="60" x2="414" y2="60" stroke="#166534" stroke-width="1.5" marker-end="url(#ag)"/>
+      <text x="395" y="53" fill="#166534" font-size="9" font-weight="600" text-anchor="middle">YES</text>
+      <rect x="414" y="40" width="110" height="40" rx="7" fill="#dcfce7" stroke="#166534" stroke-width="1.5"/>
+      <text x="469" y="58" text-anchor="middle" fill="#166534" font-weight="700">API Route</text>
+      <text x="469" y="72" text-anchor="middle" fill="#166534" font-size="9.5">Next.js handler</text>
+      <line x1="524" y1="60" x2="562" y2="60" stroke="#166534" stroke-width="1.5" marker-end="url(#ag)"/>
+      <rect x="562" y="40" width="90" height="40" rx="7" fill="#ccfbf1" stroke="#0f766e" stroke-width="1.5"/>
+      <text x="607" y="58" text-anchor="middle" fill="#0f766e" font-weight="700">Neon DB</text>
+      <text x="607" y="72" text-anchor="middle" fill="#0f766e" font-size="9.5">PostgreSQL</text>
+      <!-- NO → MutationQueue -->
+      <line x1="326" y1="80" x2="326" y2="130" stroke="#dc2626" stroke-width="1.5" marker-end="url(#ar)"/>
+      <text x="338" y="110" fill="#dc2626" font-size="9.5" font-weight="600">NO</text>
+      <rect x="246" y="130" width="160" height="50" rx="7" fill="#fee2e2" stroke="#dc2626" stroke-width="1.5"/>
+      <text x="326" y="152" text-anchor="middle" fill="#dc2626" font-weight="700">MutationQueue</text>
+      <text x="326" y="166" text-anchor="middle" fill="#dc2626" font-size="9.5">localStorage · max 3 retries</text>
+      <text x="326" y="178" text-anchor="middle" fill="#dc2626" font-size="9">id · operation · payload · retries</text>
+      <!-- Dexie -->
+      <rect x="424" y="130" width="120" height="40" rx="7" fill="#fef3c7" stroke="#b45309" stroke-width="1.5"/>
+      <text x="484" y="148" text-anchor="middle" fill="#b45309" font-weight="700">Dexie IndexedDB</text>
+      <text x="484" y="162" text-anchor="middle" fill="#b45309" font-size="9.5">optimistic local state</text>
+      <!-- online event → sync -->
+      <rect x="30" y="220" width="130" height="40" rx="7" fill="#ede9fe" stroke="#7c3aed" stroke-width="1.5"/>
+      <text x="95" y="238" text-anchor="middle" fill="#7c3aed" font-weight="700">window 'online'</text>
+      <text x="95" y="252" text-anchor="middle" fill="#7c3aed" font-size="9.5">navigator event</text>
+      <line x1="160" y1="240" x2="198" y2="240" stroke="#94a3b8" stroke-width="1.5" marker-end="url(#ag2)"/>
+      <rect x="198" y="220" width="110" height="40" rx="7" fill="#dcfce7" stroke="#166534" stroke-width="1.5"/>
+      <text x="253" y="238" text-anchor="middle" fill="#166534" font-weight="700">sync()</text>
+      <text x="253" y="252" text-anchor="middle" fill="#166534" font-size="9.5">replay mutations</text>
+      <line x1="253" y1="220" x2="326" y2="180" stroke="#94a3b8" stroke-width="1.2" stroke-dasharray="4,3" marker-end="url(#ag2)"/>
+      <line x1="308" y1="240" x2="414" y2="240" stroke="#166534" stroke-width="1.5" marker-end="url(#ag)"/>
+      <rect x="414" y="220" width="110" height="40" rx="7" fill="#dcfce7" stroke="#166534" stroke-width="1.5"/>
+      <text x="469" y="238" text-anchor="middle" fill="#166534" font-weight="700">API Routes</text>
+      <text x="469" y="252" text-anchor="middle" fill="#166534" font-size="9.5">sequential replay</text>
+    </svg>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════ S3: REGISTRY ════════ -->
+<div class="page section" id="s3">
+  <div class="section-header">
+    <div class="section-number">4</div>
+    <h1 class="section-title">Registry — GitHub Packages</h1>
+  </div>
+
+  <div class="info">Los paquetes <code>@lynkko/*</code> se publican en <strong>GitHub Packages</strong> (<code>npm.pkg.github.com</code>). Los paquetes públicos de terceros (tailwindcss, react, drizzle-orm, etc.) siguen viniendo de npmjs.org — esto es estándar de la industria y npmjs.org tiene uptime del 99.99%.</div>
+
+  <h2>Causa de los errores ERR_INVALID_THIS</h2>
+  <p>El error venía de dos fuentes combinadas:</p>
+  <p><strong>1.</strong> El <code>.npmrc</code> de la app consumidora no tenía <code>@lynkko:registry</code> configurado → pnpm buscaba los paquetes en npmjs.org (donde no existen).</p>
+  <p><strong>2.</strong> pnpm no expande variables de entorno en <code>.npmrc</code> de proyecto. Si el token tenía <code>${GITHUB_TOKEN}</code> sin expandir, pnpm mandaba un header de auth malformado que corrompía el cliente HTTP para TODOS los registries en cascada, incluyendo npmjs.org.</p>
+
+  <h2>Solución: token nunca en .npmrc del repo</h2>
+  <p>El <code>.npmrc</code> commiteado solo declara <em>dónde</em> están los paquetes:</p>
+  <pre><code><span class="comment"># .npmrc  (commiteado en lynkko-platform Y en cada app consumidora)</span>
+@lynkko:registry=https://npm.pkg.github.com</code></pre>
+
+  <p>El token se inyecta en el entorno de ejecución:</p>
+  <table>
+    <thead><tr><th>Entorno</th><th>Cómo inyectar el token</th></tr></thead>
+    <tbody>
+      <tr><td>Local (<code>~/.npmrc</code>)</td><td><code>//npm.pkg.github.com/:_authToken=ghp_TU_PAT</code></td></tr>
+      <tr><td>Vercel — Install Command</td><td><code>echo "//npm.pkg.github.com/:_authToken=$GITHUB_TOKEN" >> ~/.npmrc && pnpm install --frozen-lockfile</code></td></tr>
+      <tr><td>GitHub Actions</td><td>Step: <code>echo "//npm.pkg.github.com/:_authToken=${{ secrets.GITHUB_TOKEN }}" >> ~/.npmrc</code></td></tr>
+    </tbody>
+  </table>
+
+  <h2>PAT requerido</h2>
+  <p>GitHub → Settings → Developer settings → Personal access tokens (Classic):</p>
+  <table>
+    <thead><tr><th>Destino</th><th>Scope</th></tr></thead>
+    <tbody>
+      <tr><td>Leer paquetes (devs + Vercel)</td><td><code>read:packages</code></td></tr>
+      <tr><td>Publicar paquetes (CI)</td><td><code>write:packages</code> (automático en GitHub Actions de la org)</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<!-- ══════════════════════════════════════════════════ S4: PIPELINE ═══════ -->
+<div class="page section" id="s4">
+  <div class="section-header">
+    <div class="section-number">5</div>
+    <h1 class="section-title">Pipeline de build y publicación</h1>
+  </div>
+
+  <h2>Build local</h2>
+  <pre><code><span class="comment"># Todos los paquetes en orden</span>
+pnpm turbo build
+
+<span class="comment"># Un paquete específico</span>
+pnpm --filter @lynkko/ui build
+
+<span class="comment"># Watch mode</span>
+pnpm --filter @lynkko/ui dev</code></pre>
+
+  <p>Cada paquete genera tres artifacts via <strong>tsup</strong>: <code>dist/index.js</code> (CJS), <code>dist/index.mjs</code> (ESM), <code>dist/index.d.ts</code> (TypeScript declarations).</p>
+
+  <h2>publishConfig en cada package.json</h2>
+  <pre><code>{
+  <span class="str">"publishConfig"</span>: {
+    <span class="str">"registry"</span>: <span class="str">"https://npm.pkg.github.com"</span>,
+    <span class="str">"access"</span>: <span class="str">"public"</span>
+  }
+}</code></pre>
+
+  <h2>GitHub Actions — .github/workflows/publish.yml</h2>
+  <pre><code><span class="kw">name:</span> Publish packages
+<span class="kw">on:</span>
+  push:
+    branches: [main]
+    paths: ['packages/**']
+
+<span class="kw">jobs:</span>
+  publish:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with: { version: 9 }
+      - uses: actions/setup-node@v4
+        with: { node-version: 20, cache: pnpm }
+
+      - name: Inject auth token
+        run: echo "//npm.pkg.github.com/:_authToken=${{ secrets.GITHUB_TOKEN }}" >> ~/.npmrc
+
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm turbo build
+
+      - name: Publish changed packages
+        run: |
+          for pkg in packages/*/; do
+            cd "$pkg"
+            pnpm publish --no-git-checks 2>/dev/null || true
+            cd ../..
+          done</code></pre>
+
+  <h2>Versionado semántico</h2>
+  <table>
+    <thead><tr><th>Cambio</th><th>Bump</th><th>Ejemplo</th></tr></thead>
+    <tbody>
+      <tr><td>Bug fix, mejora interna</td><td>patch</td><td>0.1.0 → 0.1.1</td></tr>
+      <tr><td>Nueva función, argumento opcional</td><td>minor</td><td>0.1.0 → 0.2.0</td></tr>
+      <tr><td>Breaking: rename, tipo distinto, remoción</td><td>major</td><td>0.1.0 → 1.0.0</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<!-- ══════════════════════════════════════════════════ S5: CATÁLOGO ═══════ -->
+<div class="page section" id="s5">
+  <div class="section-header">
+    <div class="section-number">6</div>
+    <h1 class="section-title">Catálogo de paquetes</h1>
+  </div>
+
+  <h2>L1 — Foundation</h2>
+  <div class="pkg-grid">
+    <div class="pkg-card l1"><span class="pkg-layer">L1</span><div class="pkg-name">@lynkko/utils</div><div class="pkg-desc">cn(), formatters de moneda/fecha, HTTP helpers (ok/created/badRequest…), type guards, slugify, generateId</div></div>
+    <div class="pkg-card l1"><span class="pkg-layer">L1</span><div class="pkg-name">@lynkko/db</div><div class="pkg-desc">createDb() con Neon serverless, createDbDirect() para migraciones, re-exports de operadores Drizzle</div></div>
+  </div>
+
+  <h2>L2 — Auth &amp; Security</h2>
+  <div class="pkg-grid">
+    <div class="pkg-card l2"><span class="pkg-layer">L2</span><div class="pkg-name">@lynkko/auth</div><div class="pkg-desc">Factory de Better Auth con Drizzle adapter, schema (users/sessions/accounts/verifications), callbacks email</div></div>
+    <div class="pkg-card l2"><span class="pkg-layer">L2</span><div class="pkg-name">@lynkko/api-keys</div><div class="pkg-desc">Generación con prefijo visible + hash SHA-256, validación, getKeyPrefix() para búsqueda en DB</div></div>
+  </div>
+
+  <h2>L3 — Communication</h2>
+  <div class="pkg-grid">
+    <div class="pkg-card l3"><span class="pkg-layer">L3</span><div class="pkg-name">@lynkko/email</div><div class="pkg-desc">sendEmail / sendEmailOrThrow vía Resend, lynkkoEmailTemplate() con CTA y branding</div></div>
+    <div class="pkg-card l3"><span class="pkg-layer">L3</span><div class="pkg-name">@lynkko/push</div><div class="pkg-desc">Web Push VAPID: sendPush / sendPushToMany, generateVapidKeys(), PushResult con expired flag</div></div>
+    <div class="pkg-card l3"><span class="pkg-layer">L3</span><div class="pkg-name">@lynkko/webhooks</div><div class="pkg-desc">HMAC-SHA256 sign/verify, dispatchWebhook / dispatchWebhookToMany, timing-safe comparison</div></div>
+    <div class="pkg-card l3"><span class="pkg-layer">L3</span><div class="pkg-name">@lynkko/notifications</div><div class="pkg-desc">In-app notifications con schema Drizzle, createNotificationService(), createSseStream() para SSE</div></div>
+  </div>
+
+  <h2>L4 — Payments</h2>
+  <div class="pkg-grid">
+    <div class="pkg-card l4"><span class="pkg-layer">L4</span><div class="pkg-name">@lynkko/wompi</div><div class="pkg-desc">Cliente Wompi Colombia: tokenización, fuentes de pago, cobro, getTransaction, verifyWebhookSignature</div></div>
+    <div class="pkg-card l4"><span class="pkg-layer">L4</span><div class="pkg-name">@lynkko/billing</div><div class="pkg-desc">PLANS registry (free/starter/pro/business/enterprise), isFeatureEnabled(), isWithinLimit()</div></div>
+  </div>
+
+  <h2>L5 — Localization</h2>
+  <div class="pkg-grid">
+    <div class="pkg-card l5"><span class="pkg-layer">L5</span><div class="pkg-name">@lynkko/currency</div><div class="pkg-desc">8 monedas LATAM: formatCurrency, toCents/fromCents, parseCurrency, sumAmounts sin errores float</div></div>
+    <div class="pkg-card l5"><span class="pkg-layer">L5</span><div class="pkg-name">@lynkko/i18n</div><div class="pkg-desc">Fechas (date-fns), teléfonos CO/MX/US, documentos (NIT/cédula/CE), capitalizeName, getInitials</div></div>
+    <div class="pkg-card l5"><span class="pkg-layer">L5</span><div class="pkg-name">@lynkko/dian</div><div class="pkg-desc">Facturación electrónica CO: CUFE SHA-384, dígito verificación NIT, IVA 19%, tipos de documento</div></div>
+    <div class="pkg-card l5"><span class="pkg-layer">L5</span><div class="pkg-name">@lynkko/qr</div><div class="pkg-desc">SVG / PNG / DataURL desde datos; generateMemberQr, generateAppointmentQr</div></div>
+  </div>
+
+  <h2>L6 — Vertical</h2>
+  <div class="pkg-grid">
+    <div class="pkg-card l6"><span class="pkg-layer">L6</span><div class="pkg-name">@lynkko/ai</div><div class="pkg-desc">Copiloto GPT-4o-mini con rate limiting por plan, streaming, historial de mensajes</div></div>
+    <div class="pkg-card l6"><span class="pkg-layer">L6</span><div class="pkg-name">@lynkko/wallets</div><div class="pkg-desc">Apple Wallet (PKPass v3 via passkit-generator), Google Wallet (JWT firmado), generateMemberQr</div></div>
+    <div class="pkg-card l6"><span class="pkg-layer">L6</span><div class="pkg-name">@lynkko/audit</div><div class="pkg-desc">Schema auditLogs, createAuditLogger() con log/query/purge, AUDIT_ACTIONS (20 constantes)</div></div>
+  </div>
+
+  <h2>L7 — Ecosystem</h2>
+  <div class="pkg-grid">
+    <div class="pkg-card l7"><span class="pkg-layer">L7</span><div class="pkg-name">@lynkko/platform</div><div class="pkg-desc">PlatformClient: isAppEnabled, getAppTheme, enableApp, updateTheme, setModuleAccess. LYNKKO_APPS enum</div></div>
+    <div class="pkg-card l7"><span class="pkg-layer">L7</span><div class="pkg-name">@lynkko/offline-sync</div><div class="pkg-desc">MutationQueue (localStorage), OfflineSyncProvider, useOfflineSync hook, registerServiceWorker, SW_TEMPLATE</div></div>
+    <div class="pkg-card l7"><span class="pkg-layer">L7</span><div class="pkg-name">@lynkko/ui</div><div class="pkg-desc">Design system completo: ThemeProvider, lynkkoPreset Tailwind, Button/Input/Badge/Card/Avatar/Modal/Tabs + dominio</div></div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════ S7: PATRONES ═══════ -->
+<div class="page section" id="s7">
+  <div class="section-header">
+    <div class="section-number">7</div>
+    <h1 class="section-title">Patrones transversales</h1>
+  </div>
+
+  <h2>Multi-tenancy</h2>
+  <div class="warning">Regla absoluta: todo query que lea o escriba datos de negocio DEBE incluir <code>eq(table.tenantId, ctx.tenantId)</code>. No se usa RLS de PostgreSQL — el filtrado es siempre explícito en código.</div>
+  <pre><code><span class="comment">// ✅ Correcto</span>
+<span class="kw">const</span> leads = <span class="kw">await</span> db.select().from(leadsTable)
+  .where(and(
+    eq(leadsTable.tenantId, ctx.tenantId),  <span class="comment">// ← NUNCA omitir</span>
+    eq(leadsTable.status, <span class="str">'active'</span>),
+  ))
+
+<span class="comment">// ❌ Incorrecto — leak cross-tenant</span>
+<span class="kw">const</span> allLeads = <span class="kw">await</span> db.select().from(leadsTable)</code></pre>
+
+  <h2>Audit trail</h2>
+  <pre><code><span class="kw">const</span> audit = createAuditLogger(db)
+
+<span class="kw">await</span> audit.log({
+  tenantId: ctx.tenantId,
+  userId:   ctx.userId,
+  action:   AUDIT_ACTIONS.LEAD_CREATED,
+  resource: <span class="str">'lead'</span>,
+  resourceId: lead.id,
+  meta:     { name: lead.name },
+  ip:       req.headers.get(<span class="str">'x-forwarded-for'</span>) ?? undefined,
+})</code></pre>
+
+  <h2>Offline-first</h2>
+  <pre><code><span class="kw">const</span> { isOnline, enqueue } = useOfflineSync()
+
+<span class="kw">async function</span> handleCreate(data) {
+  <span class="kw">if</span> (isOnline) {
+    <span class="kw">await</span> fetch(<span class="str">'/api/leads'</span>, { method: <span class="str">'POST'</span>, body: JSON.stringify(data) })
+  } <span class="kw">else</span> {
+    enqueue({ operation: <span class="str">'create'</span>, resource: <span class="str">'lead'</span>,
+              resourceId: crypto.randomUUID(), payload: data })
+  }
+}</code></pre>
+</div>
+
+<!-- ══════════════════════════════════════════════════ S8: SCHEMAS ═════════ -->
+<div class="page section" id="s8">
+  <div class="section-header">
+    <div class="section-number">8</div>
+    <h1 class="section-title">Schemas de base de datos</h1>
+  </div>
+
+  <h2>@lynkko/auth</h2>
+  <pre><code>users (id uuid PK, name text, email text UNIQUE, email_verified bool, image text, created_at, updated_at)
+sessions (id text PK, user_id uuid FK, expires_at, token text UNIQUE, ip_address, user_agent)
+accounts (id text PK, user_id uuid FK, provider_id, account_id, access_token, password, ...)
+verifications (id text PK, identifier text, value text, expires_at)</code></pre>
+
+  <h2>@lynkko/notifications</h2>
+  <pre><code>notifications (
+  id uuid PK DEFAULT gen_random_uuid(),
+  tenant_id uuid NOT NULL,
+  user_id   uuid NOT NULL,
+  title     text NOT NULL,
+  body      text, type text, link text, meta jsonb,
+  read_at   timestamp,   <span class="comment">-- NULL = no leída</span>
+  created_at timestamp NOT NULL DEFAULT now()
+)
+INDEX: (tenant_id, user_id), (created_at)</code></pre>
+
+  <h2>@lynkko/audit</h2>
+  <pre><code>audit_logs (
+  id          uuid PK,
+  tenant_id   uuid NOT NULL,
+  user_id     uuid,
+  action      text NOT NULL,   <span class="comment">-- AUDIT_ACTIONS.*</span>
+  resource    text NOT NULL,
+  resource_id text,
+  meta        jsonb,
+  ip          text, user_agent text,
+  created_at  timestamp NOT NULL DEFAULT now()
+)
+INDEX: tenant_id, user_id, action, (resource, resource_id), created_at</code></pre>
+
+  <h2>@lynkko/platform</h2>
+  <pre><code>platform_apps    (id text PK, name, description, active bool, created_at)
+platform_modules (id uuid PK, app_id FK, slug text, name, active bool) UNIQUE(app_id, slug)
+tenant_app_access (
+  id uuid PK, tenant_id uuid, app_id text FK,
+  enabled bool DEFAULT true,
+  theme   jsonb,   <span class="comment">-- AppTheme | null — colores del tenant para esta app</span>
+  created_at, updated_at
+) UNIQUE(tenant_id, app_id)
+tenant_module_access (tenant_id, app_id, module_slug, enabled) UNIQUE(tenant_id, app_id, module_slug)</code></pre>
+</div>
+
+<!-- ══════════════════════════════════════════════════ S9: INTEGRACIÓN ════ -->
+<div class="page section" id="s9">
+  <div class="section-header">
+    <div class="section-number">9</div>
+    <h1 class="section-title">Integración en una app Next.js</h1>
+  </div>
+
+  <h2>1. .npmrc en la raíz del repo</h2>
+  <pre><code>@lynkko:registry=https://npm.pkg.github.com</code></pre>
+
+  <h2>2. Vercel — Install Command override</h2>
+  <pre><code>echo "//npm.pkg.github.com/:_authToken=$GITHUB_TOKEN" >> ~/.npmrc && pnpm install --frozen-lockfile</code></pre>
+
+  <h2>3. tailwind.config.ts</h2>
+  <pre><code><span class="kw">import</span> { lynkkoPreset } <span class="kw">from</span> <span class="str">'@lynkko/ui/tailwind'</span>
+
+<span class="kw">export default</span> {
+  presets: [lynkkoPreset],
+  content: [<span class="str">'./app/**/*.{ts,tsx}'</span>, <span class="str">'./components/**/*.{ts,tsx}'</span>],
+}</code></pre>
+
+  <h2>4. app/layout.tsx</h2>
+  <pre><code><span class="kw">import</span> <span class="str">'@lynkko/ui/styles.css'</span>
+<span class="kw">import</span> { ThemeProvider } <span class="kw">from</span> <span class="str">'@lynkko/ui'</span>
+<span class="kw">import</span> { createPlatformClient } <span class="kw">from</span> <span class="str">'@lynkko/platform'</span>
+
+<span class="kw">export default async function</span> RootLayout({ children }) {
+  <span class="kw">const</span> platform = createPlatformClient(db)
+  <span class="kw">const</span> theme = <span class="kw">await</span> platform.getAppTheme(tenantId, <span class="str">'turnflow'</span>)
+
+  <span class="kw">return</span> (
+    &lt;html lang=<span class="str">"es"</span>&gt;
+      &lt;body&gt;
+        &lt;ThemeProvider theme={theme}&gt;{children}&lt;/ThemeProvider&gt;
+      &lt;/body&gt;
+    &lt;/html&gt;
+  )
+}</code></pre>
+
+  <h2>5. .env.local mínimo</h2>
+  <pre><code>DATABASE_URL=postgresql://...@ep-xxx.neon.tech/dbname?sslmode=require
+DATABASE_URL_UNPOOLED=postgresql://...@ep-xxx-direct.neon.tech/dbname?sslmode=require
+AUTH_SECRET=&lt;random-32-chars&gt;
+NEXT_PUBLIC_APP_URL=https://turnflow.co
+RESEND_API_KEY=re_xxx
+RESEND_FROM_EMAIL="Turnflow &lt;no-reply@turnflow.co&gt;"</code></pre>
+</div>
+
+<!-- ══════════════════════════════════════════════════ S10: ENV VARS ═══════ -->
+<div class="page section" id="s10">
+  <div class="section-header">
+    <div class="section-number">10</div>
+    <h1 class="section-title">Variables de entorno — referencia completa</h1>
+  </div>
+
+  <table>
+    <thead><tr><th>Variable</th><th>Paquete</th><th>Scope</th><th>Descripción</th></tr></thead>
+    <tbody>
+      <tr><td><code>DATABASE_URL</code></td><td>@lynkko/db</td><td>Servidor</td><td>Conexión pooled Neon (con PgBouncer)</td></tr>
+      <tr><td><code>DATABASE_URL_UNPOOLED</code></td><td>@lynkko/db</td><td>Servidor</td><td>Conexión directa — para drizzle-kit migrate</td></tr>
+      <tr><td><code>AUTH_SECRET</code></td><td>@lynkko/auth</td><td>Servidor</td><td>Secret de Better Auth (mínimo 32 chars)</td></tr>
+      <tr><td><code>RESEND_API_KEY</code></td><td>@lynkko/email</td><td>Servidor</td><td>API key de Resend</td></tr>
+      <tr><td><code>RESEND_FROM_EMAIL</code></td><td>@lynkko/email</td><td>Servidor</td><td>Remitente: "App &lt;no-reply@dominio.co&gt;"</td></tr>
+      <tr><td><code>NEXT_PUBLIC_VAPID_PUBLIC_KEY</code></td><td>@lynkko/push</td><td>Público</td><td>Clave VAPID pública (empieza con B)</td></tr>
+      <tr><td><code>VAPID_PRIVATE_KEY</code></td><td>@lynkko/push</td><td>Servidor</td><td>Clave VAPID privada</td></tr>
+      <tr><td><code>WOMPI_PUBLIC_KEY</code></td><td>@lynkko/wompi</td><td>Servidor</td><td>pub_prod_xxx o pub_test_xxx</td></tr>
+      <tr><td><code>WOMPI_PRIVATE_KEY</code></td><td>@lynkko/wompi</td><td>Servidor</td><td>prv_prod_xxx</td></tr>
+      <tr><td><code>WOMPI_WEBHOOK_SECRET</code></td><td>@lynkko/wompi</td><td>Servidor</td><td>Secret de eventos del panel Wompi</td></tr>
+      <tr><td><code>WOMPI_SANDBOX</code></td><td>@lynkko/wompi</td><td>Servidor</td><td>'true' solo en staging/dev</td></tr>
+      <tr><td><code>OPENAI_API_KEY</code></td><td>@lynkko/ai</td><td>Servidor</td><td>API key de OpenAI</td></tr>
+      <tr><td><code>GITHUB_TOKEN</code></td><td>registry</td><td>CI/Vercel</td><td>PAT con read:packages para instalar @lynkko/*</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<!-- ══════════════════════════════════════════════════ S11: APPS ══════════ -->
+<div class="page section" id="s11">
+  <div class="section-header">
+    <div class="section-number">12</div>
+    <h1 class="section-title">Aplicaciones del ecosistema</h1>
+  </div>
+
+  <p style="color:#64748b;margin-bottom:28px">Mapa técnico de cada aplicación: working definition (OS v0.4), ICPs prioritarios, paquetes <code>@lynkko/*</code> requeridos y estado del repo.</p>
+
+  <table>
+    <thead><tr><th>App</th><th>Color</th><th>Paquetes base</th><th>Paquetes adicionales</th><th>ICPs principales</th></tr></thead>
+    <tbody>
+      <tr>
+        <td><strong>Lynkko App</strong> <code>pec</code><br><small>Plataforma de Éxito Comercial. Ejecución comercial y visibilidad del equipo en tiempo real. No CRM.</small></td>
+        <td><span style="display:inline-block;width:14px;height:14px;background:#1e293b;border-radius:3px;vertical-align:middle"></span> <code>#1e293b</code></td>
+        <td><code>utils db auth email push audit notifications ui platform</code></td>
+        <td><code>ai webhooks api-keys</code></td>
+        <td>Empresas con ventas consultivas: construcción, hoteles, educación, salud premium, seguros, inmobiliaria</td>
+      </tr>
+      <tr>
+        <td><strong>Lynkko Superadmin</strong> <code>admin</code><br><small>Administración de tenants, apps habilitadas, temas, módulos y billing. Solo equipo Lynkko.</small></td>
+        <td><span style="display:inline-block;width:14px;height:14px;background:#4c1d95;border-radius:3px;vertical-align:middle"></span> <code>#4c1d95</code></td>
+        <td><code>utils db auth audit platform ui</code></td>
+        <td><code>billing</code></td>
+        <td>Equipo interno Lynkko</td>
+      </tr>
+      <tr>
+        <td><strong>Lynkko Incentivos</strong> <code>incentivos</code><br><small>Motivación, reconocimiento y gamificación para <strong>equipos internos</strong>. Metas, puntos, rankings en tiempo real.</small></td>
+        <td><span style="display:inline-block;width:14px;height:14px;background:#047857;border-radius:3px;vertical-align:middle"></span> <code>#047857</code></td>
+        <td><code>utils db auth notifications ui platform</code></td>
+        <td><code>billing currency ai push</code></td>
+        <td>Equipos comerciales, operativos o de servicio con metas medibles: construcción, seguros, retail, call centers</td>
+      </tr>
+      <tr>
+        <td><strong>Turnflow by Lynkko</strong> <code>turnflow</code><br><small>SaaS simple y verticalizado para negocios locales: clientes, reservas, pedidos, turnos y seguimiento de prospectos.</small></td>
+        <td><span style="display:inline-block;width:14px;height:14px;background:#7c3aed;border-radius:3px;vertical-align:middle"></span> <code>#7c3aed</code></td>
+        <td><code>utils db auth email notifications ui platform</code></td>
+        <td><code>offline-sync qr push webhooks</code></td>
+        <td>Negocios locales (2-30 emp): belleza, restaurantes, salud, gimnasios, tiendas, copropiedades</td>
+      </tr>
+      <tr>
+        <td><strong>ClubPass by Lynkko</strong> <code>clubpass</code><br><small>Membresías y fidelización para <strong>clientes externos</strong>: clubes, beneficios, recurrencia, redemptions y tarjetas digitales.</small></td>
+        <td><span style="display:inline-block;width:14px;height:14px;background:#1d4ed8;border-radius:3px;vertical-align:middle"></span> <code>#1d4ed8</code></td>
+        <td><code>utils db auth notifications ui platform</code></td>
+        <td><code>wallets qr wompi billing</code></td>
+        <td>Restaurantes, gimnasios, hoteles, belleza, retail, clubs, educación, salud preventiva</td>
+      </tr>
+      <tr>
+        <td><strong>Lynkko Customer</strong> <code>customer</code><br><small>Gestión de solicitudes y PQRS con trazabilidad interna y portal de visibilidad externa para el cliente.</small></td>
+        <td><span style="display:inline-block;width:14px;height:14px;background:#4b5563;border-radius:3px;vertical-align:middle"></span> <code>#4b5563</code></td>
+        <td><code>utils db auth email notifications ui platform</code></td>
+        <td><code>push webhooks</code></td>
+        <td>Construcción, hoteles, salud, educación, inmobiliaria, copropiedades, ecommerce</td>
+      </tr>
+      <tr>
+        <td><strong>Lynkko Help</strong> <code>help</code><br><small>Centro de ayuda y FAQs self-service. Evolución: diagnóstico guiado interactivo → escalado automático a Customer.</small></td>
+        <td><span style="display:inline-block;width:14px;height:14px;background:#0d9488;border-radius:3px;vertical-align:middle"></span> <code>#0d9488</code></td>
+        <td><code>utils db auth ui platform</code></td>
+        <td><code>ai webhooks</code></td>
+        <td>Hoteles, educación, salud, software, ecommerce, copropiedades, servicios técnicos</td>
+      </tr>
+      <tr>
+        <td><strong>Lynkko Facturación</strong> <code>facturacion</code><br><small>Facturación electrónica DIAN (Colombia) desde CSV, API, sistemas externos o eventos del ecosistema. Certificado pendiente.</small></td>
+        <td><span style="display:inline-block;width:14px;height:14px;background:#b45309;border-radius:3px;vertical-align:middle"></span> <code>#b45309</code></td>
+        <td><code>utils db auth email ui platform</code></td>
+        <td><code>dian api-keys webhooks</code></td>
+        <td>Retail, restaurantes, ecommerce, SaaS, clientes Lynkko que facturan eventos del ecosistema</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <div class="info" style="margin-top:28px">
+    <strong>Próxima migración:</strong> Turnflow (<code>gvelasquez85/turnos-app</code>) → arquitectura Lynkko Platform con Neon + Better Auth + <code>@lynkko/*</code>. Repo destino: <code>Lynkko/lynkko-turnflow</code> — Vercel prod+stg ya creados.
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════ S12: BUNDLES ═══════ -->
+<div class="page section" id="s12">
+  <div class="section-header">
+    <div class="section-number">13</div>
+    <h1 class="section-title">Bundles del ecosistema</h1>
+  </div>
+
+  <p style="color:#64748b;margin-bottom:28px">El OS v0.4 define 7 paquetes comerciales recomendados. Cada bundle se habilita en <code>tenant_app_access</code> via <code>PlatformClient</code> desde el Superadmin.</p>
+
+  <table>
+    <thead><tr><th>Bundle</th><th>Productos</th><th>Segmento</th><th>Rationale</th></tr></thead>
+    <tbody>
+      <tr>
+        <td><strong>Éxito Comercial Enterprise</strong></td>
+        <td><code>pec</code> + <code>incentivos</code></td>
+        <td>Enterprise</td>
+        <td>Gestión comercial + reconocimiento interno del equipo</td>
+      </tr>
+      <tr>
+        <td><strong>Operación Comercial Completa</strong></td>
+        <td><code>pec</code> + <code>incentivos</code> + <code>facturacion</code></td>
+        <td>Enterprise</td>
+        <td>Proceso, motivación y facturación de eventos comerciales</td>
+      </tr>
+      <tr>
+        <td><strong>Experiencia Cliente Enterprise</strong></td>
+        <td><code>customer</code> + <code>help</code> + <code>clubpass</code></td>
+        <td>Enterprise</td>
+        <td>Servicio, autoservicio y fidelización del cliente</td>
+      </tr>
+      <tr>
+        <td><strong>Constructoras / Alto Valor</strong></td>
+        <td><code>pec</code> + <code>incentivos</code> + <code>customer</code></td>
+        <td>Enterprise</td>
+        <td>Salas de ventas, asesores, metas y posventa</td>
+      </tr>
+      <tr>
+        <td><strong>Hoteles / Hospitalidad</strong></td>
+        <td><code>pec</code> + <code>clubpass</code> + <code>customer</code> + <code>help</code></td>
+        <td>Enterprise</td>
+        <td>Adquisición, experiencia, fidelización y atención</td>
+      </tr>
+      <tr>
+        <td><strong>Pequeño Negocio Recurrente</strong></td>
+        <td><code>turnflow</code> + <code>clubpass</code></td>
+        <td>SMB</td>
+        <td>Operación diaria + clientes que vuelven</td>
+      </tr>
+      <tr>
+        <td><strong>Pequeño Negocio Formalizado</strong></td>
+        <td><code>turnflow</code> + <code>facturacion</code></td>
+        <td>SMB</td>
+        <td>Operación simple + cumplimiento legal DIAN</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h2>Habilitación técnica</h2>
+  <pre><code><span class="comment">// Bundle "Pequeño Negocio Recurrente"</span>
+await platform.setAppAccess(tenantId, [
+  { appType: <span class="str">'turnflow'</span>,  enabled: true, plan: <span class="str">'pro'</span>  },
+  { appType: <span class="str">'clubpass'</span>,  enabled: true, plan: <span class="str">'base'</span> },
+])
+
+<span class="comment">// Bundle "Hoteles / Hospitalidad"</span>
+await platform.setAppAccess(tenantId, [
+  { appType: <span class="str">'pec'</span>,       enabled: true, plan: <span class="str">'enterprise'</span> },
+  { appType: <span class="str">'clubpass'</span>,  enabled: true, plan: <span class="str">'enterprise'</span> },
+  { appType: <span class="str">'customer'</span>,  enabled: true, plan: <span class="str">'enterprise'</span> },
+  { appType: <span class="str">'help'</span>,      enabled: true, plan: <span class="str">'pro'</span>        },
+])</code></pre>
+
+  <p style="font-size:13px;color:#64748b;margin-top:12px">Los planes válidos por app se definen en el <code>PlanRegistry</code> de <code>@lynkko/billing</code>. El superadmin los activa desde <code>lynkko-platform-admin</code> vía <code>PlatformClient</code>.</p>
+</div>
+
+<!-- ══════════════════════════════════════════════════ S13: AI AGENT ══════ -->
+<div class="page section" id="s13">
+  <div class="section-header">
+    <div class="section-number">14</div>
+    <h1 class="section-title">Agente Comercial IA</h1>
+  </div>
+
+  <p style="color:#64748b;margin-bottom:28px">Asistente semi-autónomo que reduce el trabajo manual del equipo comercial en prospección, perfilado, redacción de mensajes y preparación de handoffs. <strong>Fuente:</strong> Lynkko Ecosystem OS v0.4, §11.</p>
+
+  <h2>Tareas principales</h2>
+  <table>
+    <thead><tr><th>Tarea</th><th>Input</th><th>Output</th><th>Paquete</th></tr></thead>
+    <tbody>
+      <tr><td>Perfilar prospecto</td><td>Datos disponibles del lead</td><td>Resumen estructurado</td><td><code>@lynkko/ai</code></td></tr>
+      <tr><td>Clasificar ICP, vertical, pain</td><td>Perfil del lead</td><td>Etiquetas + fit score</td><td><code>@lynkko/ai</code></td></tr>
+      <tr><td>Calcular fit score e intent score</td><td>Campos PEC + señales</td><td>Score 0–100</td><td><code>@lynkko/ai</code></td></tr>
+      <tr><td>Redactar primer contacto</td><td>Perfil + producto de entrada</td><td>Mensaje draft</td><td><code>@lynkko/ai</code></td></tr>
+      <tr><td>Redactar follow-ups</td><td>Historial de conversación</td><td>Mensaje draft</td><td><code>@lynkko/ai</code></td></tr>
+      <tr><td>Resumir respuestas</td><td>Respuesta del prospecto</td><td>Resumen + next action</td><td><code>@lynkko/ai</code></td></tr>
+      <tr><td>Preparar brief de demo/diagnóstico</td><td>Conversación completa</td><td>Brief estructurado</td><td><code>@lynkko/ai</code></td></tr>
+      <tr><td>Sugerir actualizaciones PEC</td><td>Conversación + stage actual</td><td>Campos a actualizar</td><td><code>@lynkko/ai</code></td></tr>
+    </tbody>
+  </table>
+
+  <h2>Guardrails</h2>
+  <pre><code>const AGENT_GUARDRAILS = {
+  blocked: [
+    <span class="str">'send_bulk_messages'</span>,           <span class="comment">// no envío masivo sin revisión humana</span>
+    <span class="str">'scrape_social_media'</span>,          <span class="comment">// no scraping agresivo de LinkedIn/IG/TikTok</span>
+    <span class="str">'promise_unconfirmed_features'</span>, <span class="comment">// no prometer capabilities no confirmadas</span>
+    <span class="str">'contact_enterprise_cold'</span>,      <span class="comment">// enterprise siempre requiere aprobación humana</span>
+  ],
+  escalate_when: [
+    <span class="str">'pricing_question'</span>, <span class="str">'demo_interest'</span>, <span class="str">'enterprise_opportunity'</span>,
+    <span class="str">'legal_or_contractual'</span>, <span class="str">'prospect_frustration'</span>, <span class="str">'unclear_product_capability'</span>,
+  ],
+  mode: <span class="str">'semi_autonomous'</span>, <span class="comment">// drafts generados — humano aprueba antes del envío</span>
+}</code></pre>
+
+  <h2>Integración con <code>@lynkko/ai</code></h2>
+  <pre><code>import { createCopilot } from <span class="str">'@lynkko/ai'</span>
+
+const agent = createCopilot({
+  model:      <span class="str">'gpt-4o'</span>,
+  tenantId:   LYNKKO_INTERNAL_TENANT_ID,
+  rateLimits: { rpm: 60, tpm: 100_000 },
+  tools: [
+    <span class="str">'profile_lead'</span>, <span class="str">'classify_icp'</span>, <span class="str">'score_lead'</span>,
+    <span class="str">'draft_message'</span>, <span class="str">'summarize_reply'</span>,
+    <span class="str">'prepare_demo_brief'</span>, <span class="str">'suggest_pec_update'</span>,
+  ],
+})
+
+<span class="comment">// El agente genera drafts — nunca envía directamente</span>
+const draft = await agent.draftFirstContact({
+  leadId,
+  productEntry: <span class="str">'turnflow'</span>,
+})
+<span class="comment">// → { subject, body, suggestedChannel, painSignal, fitScore }</span></code></pre>
+</div>
+
+<!-- ══════════════════════════════════════════════════ S14: PEC MODEL ════ -->
+<div class="page section" id="s14">
+  <div class="section-header">
+    <div class="section-number">15</div>
+    <h1 class="section-title">Modelo de datos PEC</h1>
+  </div>
+
+  <p style="color:#64748b;margin-bottom:28px">Lynkko usa su propio PEC como command center del equipo comercial. Los campos y el pipeline definidos aquí tienen implicaciones directas en el schema de <code>@lynkko/db</code>. <strong>Fuente:</strong> OS v0.4, §6.</p>
+
+  <h2>Schema SQL — tabla <code>leads</code></h2>
+  <pre><code>CREATE TABLE leads (
+  id                   uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  tenant_id            uuid NOT NULL REFERENCES tenants(id),
+
+  <span class="comment">-- Identificación</span>
+  lead_name            text NOT NULL,
+  business_name        text,
+  contact_role         text,
+  country              text,
+  city                 text,
+  industry             text,
+  business_size        text,        <span class="comment">-- '1-10' | '11-50' | '51-200' | '200+'</span>
+
+  <span class="comment">-- Origen y clasificación</span>
+  source               text,        <span class="comment">-- 'meta_ads' | 'linkedin' | 'referral' | 'organic'</span>
+  product_fit          text,        <span class="comment">-- 'pec' | 'turnflow' | 'clubpass' | 'incentivos' | ...</span>
+  product_interest     text[],      <span class="comment">-- múltiples productos de interés</span>
+  pain_signal          text,        <span class="comment">-- frase literal del prospecto</span>
+  channel              text,        <span class="comment">-- 'whatsapp' | 'email' | 'call' | 'linkedin'</span>
+  campaign             text,
+
+  <span class="comment">-- Scores (calculados por el AI agent)</span>
+  fit_score            smallint CHECK (fit_score    BETWEEN 0 AND 100),
+  intent_score         smallint CHECK (intent_score BETWEEN 0 AND 100),
+  icp_tag              text,        <span class="comment">-- ver tabla ICP_TAGS</span>
+
+  <span class="comment">-- Estado del pipeline</span>
+  current_stage        text NOT NULL DEFAULT 'sourced',
+  owner                text,
+  last_interaction_at  timestamptz,
+  next_action          text,
+  next_action_at       timestamptz,
+
+  <span class="comment">-- Conversación</span>
+  objections           text[],
+  notes                text,
+
+  created_at           timestamptz NOT NULL DEFAULT now(),
+  updated_at           timestamptz NOT NULL DEFAULT now()
+);</code></pre>
+
+  <h2>Etapas del pipeline</h2>
+  <table>
+    <thead><tr><th>#</th><th>Stage</th><th>Descripción</th></tr></thead>
+    <tbody>
+      <tr><td>1</td><td><code>sourced</code></td><td>Lead identificado / importado</td></tr>
+      <tr><td>2</td><td><code>enriched</code></td><td>Datos enriquecidos (industria, tamaño, contacto)</td></tr>
+      <tr><td>3</td><td><code>qualified_by_ai</code></td><td>Agente IA calculó fit + intent score</td></tr>
+      <tr><td>4</td><td><code>human_reviewed</code></td><td>Humano validó la calificación del agente</td></tr>
+      <tr><td>5</td><td><code>contacted</code></td><td>Primer contacto enviado</td></tr>
+      <tr><td>6</td><td><code>responded</code></td><td>Prospecto respondió</td></tr>
+      <tr><td>7</td><td><code>qualified_conversation</code></td><td>Conversación de calificación completada</td></tr>
+      <tr><td>8</td><td><code>demo_booked</code></td><td>Demo o diagnóstico agendado</td></tr>
+      <tr><td>9</td><td><code>demo_completed</code></td><td>Demo o diagnóstico completado</td></tr>
+      <tr><td>10</td><td><code>proposal_pilot</code></td><td>Propuesta o piloto enviado</td></tr>
+      <tr><td>11</td><td><code>won</code></td><td>Cliente adquirido</td></tr>
+      <tr><td>12</td><td><code>lost</code></td><td>Oportunidad perdida (registrar motivo)</td></tr>
+      <tr><td>13</td><td><code>nurture</code></td><td>Mantener en ciclo de nurturing</td></tr>
+    </tbody>
+  </table>
+
+  <h2>Tags ICP</h2>
+  <pre><code>export const ICP_TAGS = {
+  icp1_small_local:     <span class="str">'Pequeño negocio local (2-30 emp, WhatsApp/Excel)'</span>,
+  icp2_commercial_team: <span class="str">'Empresa con equipo comercial (5+ en ventas/field)'</span>,
+  icp3_service_pqrs:    <span class="str">'Empresa con solicitudes, PQRS o posventa recurrente'</span>,
+  icp4_membership:      <span class="str">'Negocio con membresías, fidelización o comunidad'</span>,
+} as const</code></pre>
+
+  <!-- Footer -->
+  <div style="margin-top:80px;padding-top:24px;border-top:1px solid #e2e8f0;display:flex;justify-content:space-between;align-items:center;">
+    <div style="display:flex;align-items:center;gap:10px">
+      <div style="width:28px;height:28px;background:#166534;border-radius:6px;display:flex;align-items:center;justify-content:center">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
+      </div>
+      <span style="font-weight:700;color:#0f172a;font-size:15px">Lynkko</span>
+    </div>
+    <div style="text-align:right;font-size:12px;color:#64748b">
+      <div>Lynkko Platform — Arquitectura Técnica v1.0 · OS v0.4</div>
+      <div>Documento confidencial — junio 2026</div>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>

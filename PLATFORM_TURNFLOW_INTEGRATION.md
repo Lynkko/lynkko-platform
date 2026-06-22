@@ -161,6 +161,35 @@ The nightly sync job at `/api/cron/sync-licenses`:
 
 ---
 
+## 🎯 Phase 1: Complete — Modules & Marketplace
+
+### ✅ Implemented in Phase 1
+
+**Module Management APIs:**
+- ✅ GET `/api/tenants/{tenantId}/modules?app_id={appId}` — List modules with tenant's access status
+- ✅ POST `/api/tenants/{tenantId}/modules/{moduleId}/toggle` — Enable/disable module, send webhook
+- ✅ POST `/api/tenants/{tenantId}/apps/{appId}/toggle` — Enable/disable app, send webhook
+
+**Marketplace (Centralized):**
+- ✅ GET `/api/marketplace/{tenantId}` — Complete marketplace view (apps + modules + subscriptions + status)
+- ✅ Response includes all apps, their modules, tenant's access status, and current subscription
+
+**Webhooks Integration:**
+- ✅ Events: `module_enabled`, `module_disabled`, `app_enabled`, `app_disabled`
+- ✅ HMAC-SHA256 signing for all webhooks
+- ✅ Async delivery (doesn't block requests)
+
+**UI Components:**
+- ✅ Modules tab in tenant detail page
+- ✅ ModulesTab component for managing modules per app
+- ✅ Server actions for toggle operations
+
+**Documentation:**
+- ✅ MARKETPLACE_API.md with complete endpoint reference
+- ✅ Webhook examples and integration guide
+
+---
+
 ## 🚀 Deployment & Testing Checklist
 
 ### Prerequisites

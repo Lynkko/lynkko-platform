@@ -4,9 +4,12 @@ const TURNFLOW_WEBHOOK_URL = process.env.TURNFLOW_WEBHOOK_URL ?? 'https://turnfl
 const PLATFORM_WEBHOOK_SECRET = process.env.PLATFORM_WEBHOOK_SECRET!
 
 export interface WebhookEvent {
-  event: 'subscription_activated' | 'plan_changed' | 'subscription_suspended' | 'subscription_canceled'
+  event: 'subscription_activated' | 'plan_changed' | 'subscription_suspended' | 'subscription_canceled' | 'subscription_updated' | 'module_enabled' | 'module_disabled' | 'app_enabled' | 'app_disabled'
   tenant_id: string
-  subscription_id: string
+  subscription_id?: string
+  module_id?: string
+  module_slug?: string
+  module_name?: string
   plan?: {
     id: string
     name: string

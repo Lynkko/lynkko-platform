@@ -41,3 +41,76 @@ export async function createPlanAction(formData: FormData) {
 
   revalidatePath('/dashboard/plans')
 }
+
+export async function updatePlanAction(
+  planId: string,
+  formData: FormData
+) {
+  await requireSuperadmin()
+
+  const baseUrl = process.env.NEXTAUTH_URL || 'http://localhost:3000'
+
+  const updateData: any = {}
+
+  const name = formData.get('name')
+  if (name) updateData.name = (name as string).trim()
+
+  const description = formData.get('description')
+  if (description !== null) updateData.description = (description as string).trim() || null
+
+  const monthlyPrice = formData.get('monthlyPrice')
+  if (monthlyPrice) updateData.monthly_price = Number(monthlyPrice)
+
+  const annualPrice = formData.get('annualPrice')
+  if (annualPrice) updateData.annual_price = Number(annualPrice)
+
+  const maxSeats = formData.get('maxSeats')
+  if (maxSeats) updateData.max_seats = Number(maxSeats)
+
+  const sortOrder = formData.get('sortOrder')
+  if (sortOrder) updateData.sort_order = Number(sortOrder)
+
+  const featuresRaw = formData.get('features')
+  if (featuresRaw) {
+    updateData.features = (featuresRaw as string)
+      .split('\n')
+      .map((f) => f.trim())
+      .filter(Boolean)
+  }
+
+  const isPublic = formData.get('isPublic')
+  if (isPublic !== null) updateData.is_public = isPublic === 'on'
+
+  const isActive = formData.get('isActive')
+  if (isActive !== null) updateData.is_active = isActive === 'on'
+
+  const response = await fetch(`${baseUrl}/api/plans/${planId}`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(updateData),
+  })
+
+  if (!response.ok) {
+    const error = await response.json()
+    throw new Error(error.error || 'Failed to update plan')
+  }
+
+  revalidatePath('/dashboard/plans')
+}
+
+export async function deletePlanAction(planId: string) {
+  await requireSuperadmin()
+
+  const baseUrl = process.env.NEXTAUTH_URL || 'http://localhost:3000'
+
+  const response = await fetch(`${baseUrl}/api/plans/${planId}`, {
+    method: 'DELETE',
+  })
+
+  if (!response.ok) {
+    const error = await response.json()
+    throw new Error(error.error || 'Failed to delete plan')
+  }
+
+  revalidatePath('/dashboard/plans')
+}

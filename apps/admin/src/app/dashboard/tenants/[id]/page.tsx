@@ -11,6 +11,7 @@ import { SubscriptionsTab } from './SubscriptionsTab'
 import { BillingTab } from './BillingTab'
 import { UsageTab } from './UsageTab'
 import { BrandTab } from './BrandTab'
+import { ModulesTab } from './ModulesTab'
 
 interface Props {
   params:       Promise<{ id: string }>
@@ -41,6 +42,16 @@ export default async function TenantDetailPage({ params, searchParams }: Props) 
     .where(eq(platformSchema.tenantAppAccess.tenantId, tenantId))
 
   if (!tenant && accesses.length === 0) notFound()
+
+  // Fetch modules
+  const allModules = await db
+    .select()
+    .from(platformSchema.platformModules)
+
+  const moduleAccesses = await db
+    .select()
+    .from(platformSchema.tenantModuleAccess)
+    .where(eq(platformSchema.tenantModuleAccess.tenantId, tenantId))
 
   // Data needed per tab (fetch only what's active)
   const [subscriptions, invoices, usageRecords, allPlans] = await Promise.all([
@@ -141,6 +152,26 @@ export default async function TenantDetailPage({ params, searchParams }: Props) 
             </div>
           </CardContent>
         </Card>
+      )}
+
+      {activeTab === 'modules' && (
+        <div className="space-y-6">
+          {Object.values(LYNKKO_APPS).map((appId) => {
+            const appModules = allModules.filter((m) => m.appId === appId)
+            if (appModules.length === 0) return null
+
+            return (
+              <ModulesTab
+                key={appId}
+                tenantId={tenantId}
+                appId={appId}
+                appName={APP_NAMES[appId] ?? appId}
+                modules={appModules}
+                accesses={moduleAccesses}
+              />
+            )
+          })}
+        </div>
       )}
 
       {activeTab === 'subscriptions' && (
