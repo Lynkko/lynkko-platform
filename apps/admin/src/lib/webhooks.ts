@@ -1,6 +1,6 @@
 import crypto from 'crypto'
 
-const TURNFLOW_WEBHOOK_URL = 'https://turnflow.lynkko.co/api/platform/webhook'
+const TURNFLOW_WEBHOOK_URL = process.env.TURNFLOW_WEBHOOK_URL ?? 'https://turnflow.lynkko.co/api/platform/webhook'
 const PLATFORM_WEBHOOK_SECRET = process.env.PLATFORM_WEBHOOK_SECRET!
 
 export interface WebhookEvent {
