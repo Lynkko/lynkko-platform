@@ -1,5 +1,5 @@
 import { db, platformSchema } from '@/lib/db'
-import { eq, and } from 'drizzle-orm'
+import { eq, and, desc } from 'drizzle-orm'
 import { ok, badRequest, serverError } from '@lynkko/utils'
 import type { NextRequest } from 'next/server'
 
@@ -16,23 +16,18 @@ export async function GET(req: NextRequest) {
     const eventType = searchParams.get('event_type')
     const limit = parseInt(searchParams.get('limit') ?? '50')
 
-    let query = db.select().from(platformSchema.webhookDeliveries)
+    const conditions = [
+      appId ? eq(platformSchema.webhookDeliveries.appId, appId) : undefined,
+      status ? eq(platformSchema.webhookDeliveries.status, status) : undefined,
+      eventType ? eq(platformSchema.webhookDeliveries.eventType, eventType) : undefined,
+    ].filter(Boolean) as any[]
 
-    if (appId) {
-      query = query.where(eq(platformSchema.webhookDeliveries.appId, appId))
-    }
-
-    if (status) {
-      query = query.where(eq(platformSchema.webhookDeliveries.status, status))
-    }
-
-    if (eventType) {
-      query = query.where(eq(platformSchema.webhookDeliveries.eventType, eventType))
-    }
-
-    const deliveries = await query
+    const deliveries = await db
+      .select()
+      .from(platformSchema.webhookDeliveries)
+      .where(conditions.length ? and(...conditions) : undefined)
       .limit(limit)
-      .orderBy(db.desc(platformSchema.webhookDeliveries.createdAt))
+      .orderBy(desc(platformSchema.webhookDeliveries.createdAt))
 
     return ok({
       deliveries: deliveries.map((d: any) => ({

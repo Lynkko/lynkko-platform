@@ -178,7 +178,7 @@ export async function GET(req: NextRequest) {
               reference,
               status: 'DECLINED',
               errorMessage: errorMsg,
-              wompiResponse: wompiResult,
+              wompiResponse: wompiResult as any,
               processedAt: new Date(),
             })
 

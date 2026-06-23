@@ -1,30 +1,15 @@
 import { db, platformSchema } from './db'
-import { eq } from 'drizzle-orm'
+import { eq, and, or, lte, lt } from 'drizzle-orm'
 import type { WebhookEvent } from './webhooks'
 
-interface WebhookDelivery {
-  id: string
-  eventType: string
-  tenantId: string
-  appId: string
-  payload: WebhookEvent
-  webhookUrl: string
-  attemptCount: number
-  maxAttempts: number
-  nextRetryAt: Date | null
-}
-
 const RETRY_DELAYS = [
-  60 * 1000,        // 1 minute
-  5 * 60 * 1000,    // 5 minutes
-  15 * 60 * 1000,   // 15 minutes
-  60 * 60 * 1000,   // 1 hour
-  24 * 60 * 60 * 1000, // 24 hours
+  60 * 1000,
+  5 * 60 * 1000,
+  15 * 60 * 1000,
+  60 * 60 * 1000,
+  24 * 60 * 60 * 1000,
 ]
 
-/**
- * Queue a webhook for delivery with retry support
- */
 export async function queueWebhook(
   eventType: string,
   tenantId: string,
@@ -38,21 +23,18 @@ export async function queueWebhook(
       eventType,
       tenantId,
       appId,
-      payload,
+      payload: payload as any,
       webhookUrl,
       status: 'pending',
       attemptCount: 0,
       maxAttempts: 5,
-      nextRetryAt: new Date(), // Start immediately
+      nextRetryAt: new Date(),
     })
     .returning()
 
   return record
 }
 
-/**
- * Attempt to deliver a webhook
- */
 export async function deliverWebhook(deliveryId: string): Promise<boolean> {
   const [delivery] = await db
     .select()
@@ -60,28 +42,18 @@ export async function deliverWebhook(deliveryId: string): Promise<boolean> {
     .where(eq(platformSchema.webhookDeliveries.id, deliveryId))
     .limit(1)
 
-  if (!delivery) {
-    return false
-  }
-
-  if (delivery.status !== 'pending' && delivery.status !== 'failed') {
-    return false
-  }
+  if (!delivery) return false
+  if (delivery.status !== 'pending' && delivery.status !== 'failed') return false
 
   try {
-    // Sign webhook
     const timestamp = Math.floor(Date.now() / 1000).toString()
     const payload = JSON.stringify(delivery.payload)
     const message = `${timestamp}.${payload}`
 
     const crypto = await import('crypto')
     const secret = process.env.PLATFORM_WEBHOOK_SECRET!
-    const signature = crypto
-      .createHmac('sha256', secret)
-      .update(message)
-      .digest('hex')
+    const signature = crypto.createHmac('sha256', secret).update(message).digest('hex')
 
-    // Send webhook
     const response = await fetch(delivery.webhookUrl, {
       method: 'POST',
       headers: {
@@ -90,11 +62,9 @@ export async function deliverWebhook(deliveryId: string): Promise<boolean> {
         'X-Platform-Timestamp': timestamp,
       },
       body: payload,
-      timeout: 10000, // 10 second timeout
     })
 
     if (response.ok) {
-      // Success
       await db
         .update(platformSchema.webhookDeliveries)
         .set({
@@ -102,12 +72,11 @@ export async function deliverWebhook(deliveryId: string): Promise<boolean> {
           deliveredAt: new Date(),
           httpStatus: response.status,
           attemptCount: (delivery.attemptCount || 0) + 1,
+          updatedAt: new Date(),
         })
         .where(eq(platformSchema.webhookDeliveries.id, deliveryId))
-
       return true
     } else {
-      // Non-200 response
       const responseBody = await response.text()
       await handleWebhookFailure(deliveryId, delivery, response.status, responseBody)
       return false
@@ -119,9 +88,6 @@ export async function deliverWebhook(deliveryId: string): Promise<boolean> {
   }
 }
 
-/**
- * Handle webhook delivery failure and schedule retry
- */
 async function handleWebhookFailure(
   deliveryId: string,
   delivery: any,
@@ -131,60 +97,34 @@ async function handleWebhookFailure(
   const nextAttempt = delivery.attemptCount + 1
 
   if (nextAttempt >= delivery.maxAttempts) {
-    // Max retries reached
     await db
       .update(platformSchema.webhookDeliveries)
-      .set({
-        status: 'failed',
-        httpStatus: httpStatus || 0,
-        errorMessage,
-        attemptCount: nextAttempt,
-      })
+      .set({ status: 'failed', httpStatus: httpStatus || 0, errorMessage, attemptCount: nextAttempt, updatedAt: new Date() })
       .where(eq(platformSchema.webhookDeliveries.id, deliveryId))
-
-    console.error(
-      `Webhook delivery failed after ${nextAttempt} attempts: ${delivery.webhookUrl}`
-    )
+    console.error(`Webhook delivery failed after ${nextAttempt} attempts: ${delivery.webhookUrl}`)
   } else {
-    // Schedule retry
     const delayMs = RETRY_DELAYS[nextAttempt - 1] || RETRY_DELAYS[RETRY_DELAYS.length - 1]
     const nextRetryAt = new Date(Date.now() + delayMs)
-
     await db
       .update(platformSchema.webhookDeliveries)
-      .set({
-        status: 'failed',
-        httpStatus: httpStatus || 0,
-        errorMessage,
-        attemptCount: nextAttempt,
-        nextRetryAt,
-      })
+      .set({ status: 'failed', httpStatus: httpStatus || 0, errorMessage, attemptCount: nextAttempt, nextRetryAt, updatedAt: new Date() })
       .where(eq(platformSchema.webhookDeliveries.id, deliveryId))
-
-    console.log(
-      `Webhook retry scheduled for ${nextRetryAt.toISOString()}: ${delivery.webhookUrl}`
-    )
+    console.log(`Webhook retry scheduled for ${nextRetryAt.toISOString()}: ${delivery.webhookUrl}`)
   }
 }
 
-/**
- * Process pending webhooks (call this from cron job)
- */
 export async function processPendingWebhooks() {
   const now = new Date()
 
-  // Get all pending deliveries that are due for retry
   const pendingDeliveries = await db
     .select()
     .from(platformSchema.webhookDeliveries)
     .where(
-      db.and(
-        db.or(
-          eq(platformSchema.webhookDeliveries.status, 'pending'),
-          db.and(
-            eq(platformSchema.webhookDeliveries.status, 'failed'),
-            db.lte(platformSchema.webhookDeliveries.nextRetryAt, now)
-          )
+      or(
+        eq(platformSchema.webhookDeliveries.status, 'pending'),
+        and(
+          eq(platformSchema.webhookDeliveries.status, 'failed'),
+          lte(platformSchema.webhookDeliveries.nextRetryAt, now)
         )
       )
     )
@@ -194,19 +134,13 @@ export async function processPendingWebhooks() {
 
   for (const delivery of pendingDeliveries) {
     const success = await deliverWebhook(delivery.id)
-    if (success) {
-      delivered++
-    } else {
-      failed++
-    }
+    if (success) delivered++
+    else failed++
   }
 
   return { delivered, failed, total: pendingDeliveries.length }
 }
 
-/**
- * Get webhook delivery history for an app
- */
 export async function getWebhookDeliveryHistory(appId: string, limit: number = 50) {
   return db
     .select()
@@ -216,25 +150,20 @@ export async function getWebhookDeliveryHistory(appId: string, limit: number = 5
     .orderBy(platformSchema.webhookDeliveries.createdAt)
 }
 
-/**
- * Archive old completed deliveries (cleanup)
- */
 export async function archiveOldDeliveries(olderThanDays: number = 30) {
   const cutoffDate = new Date()
   cutoffDate.setDate(cutoffDate.getDate() - olderThanDays)
 
-  const result = await db
+  return db
     .update(platformSchema.webhookDeliveries)
-    .set({ status: 'archived' })
+    .set({ status: 'archived', updatedAt: new Date() })
     .where(
-      db.and(
-        db.or(
+      and(
+        or(
           eq(platformSchema.webhookDeliveries.status, 'delivered'),
           eq(platformSchema.webhookDeliveries.status, 'failed')
         ),
-        db.lt(platformSchema.webhookDeliveries.createdAt, cutoffDate)
+        lt(platformSchema.webhookDeliveries.createdAt, cutoffDate)
       )
     )
-
-  return result
 }

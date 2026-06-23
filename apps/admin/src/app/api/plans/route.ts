@@ -1,5 +1,5 @@
 import { db, platformSchema } from '@/lib/db'
-import { eq } from 'drizzle-orm'
+import { eq, and } from 'drizzle-orm'
 import { ok, badRequest, notFound, serverError } from '@lynkko/utils'
 import type { NextRequest } from 'next/server'
 
@@ -73,7 +73,7 @@ export async function POST(req: NextRequest) {
       .select()
       .from(platformSchema.appPlans)
       .where(
-        db.and(
+        and(
           eq(platformSchema.appPlans.appId, app_id),
           eq(platformSchema.appPlans.slug, slug)
         )

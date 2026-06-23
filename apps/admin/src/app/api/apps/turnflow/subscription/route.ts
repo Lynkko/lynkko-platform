@@ -1,5 +1,5 @@
 import { db, platformSchema } from '@/lib/db'
-import { eq } from 'drizzle-orm'
+import { eq, and } from 'drizzle-orm'
 import { ok, badRequest, unauthorized, notFound, serverError } from '@lynkko/utils'
 import type { NextRequest } from 'next/server'
 
@@ -34,7 +34,7 @@ export async function GET(req: NextRequest) {
       })
       .from(platformSchema.subscriptions)
       .where(
-        db.and(
+        and(
           eq(platformSchema.subscriptions.tenantId, tenantId),
           eq(platformSchema.subscriptions.appId, 'turnflow')
         )
@@ -71,7 +71,7 @@ export async function GET(req: NextRequest) {
       .from(platformSchema.platformModules)
       .leftJoin(
         platformSchema.tenantModuleAccess,
-        db.and(
+        and(
           eq(platformSchema.tenantModuleAccess.tenantId, tenantId),
           eq(platformSchema.tenantModuleAccess.moduleId, platformSchema.platformModules.id)
         )

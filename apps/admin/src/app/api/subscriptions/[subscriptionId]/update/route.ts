@@ -1,5 +1,5 @@
 import { db, platformSchema } from '@/lib/db'
-import { eq } from 'drizzle-orm'
+import { eq, and } from 'drizzle-orm'
 import { ok, badRequest, notFound, serverError } from '@lynkko/utils'
 import { sendWebhookAsync } from '@/lib/webhooks'
 import type { NextRequest } from 'next/server'
@@ -48,7 +48,7 @@ export async function PUT(req: NextRequest, { params }: Params) {
         .select()
         .from(platformSchema.appPlans)
         .where(
-          db.and(
+          and(
             eq(platformSchema.appPlans.id, plan_id),
             eq(platformSchema.appPlans.appId, subscription.appId)
           )
@@ -90,6 +90,7 @@ export async function PUT(req: NextRequest, { params }: Params) {
     // Get active modules for webhook
     const modules = await db
       .select({
+        id: platformSchema.platformModules.id,
         slug: platformSchema.platformModules.slug,
       })
       .from(platformSchema.platformModules)
@@ -103,7 +104,7 @@ export async function PUT(req: NextRequest, { params }: Params) {
         })
         .from(platformSchema.tenantModuleAccess)
         .where(
-          db.and(
+          and(
             eq(platformSchema.tenantModuleAccess.tenantId, subscription.tenantId),
             eq(platformSchema.tenantModuleAccess.moduleId, module.id)
           )

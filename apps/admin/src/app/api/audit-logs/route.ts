@@ -1,5 +1,5 @@
 import { db, platformSchema } from '@/lib/db'
-import { eq, and } from 'drizzle-orm'
+import { eq, and, desc } from 'drizzle-orm'
 import { ok, serverError } from '@lynkko/utils'
 import type { NextRequest } from 'next/server'
 
@@ -17,24 +17,24 @@ export async function GET(req: NextRequest) {
     const action = searchParams.get('action')
     const limit = parseInt(searchParams.get('limit') ?? '100')
 
-    let query = db.select().from(platformSchema.auditLogs)
-
+    let whereClause: any = undefined
     if (resourceType && resourceId) {
-      query = query.where(
-        and(
-          eq(platformSchema.auditLogs.resourceType, resourceType),
-          eq(platformSchema.auditLogs.resourceId, resourceId)
-        )
+      whereClause = and(
+        eq(platformSchema.auditLogs.resourceType, resourceType),
+        eq(platformSchema.auditLogs.resourceId, resourceId)
       )
     } else if (userId) {
-      query = query.where(eq(platformSchema.auditLogs.userId, userId))
+      whereClause = eq(platformSchema.auditLogs.userId, userId)
     } else if (action) {
-      query = query.where(eq(platformSchema.auditLogs.action, action))
+      whereClause = eq(platformSchema.auditLogs.action, action)
     }
 
-    const logs = await query
+    const logs = await db
+      .select()
+      .from(platformSchema.auditLogs)
+      .where(whereClause)
       .limit(limit)
-      .orderBy(db.desc(platformSchema.auditLogs.createdAt))
+      .orderBy(desc(platformSchema.auditLogs.createdAt))
 
     return ok({
       logs: logs.map((log: any) => ({

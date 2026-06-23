@@ -19,8 +19,8 @@ export async function POST(req: NextRequest, { params }: Params) {
     // Verify key exists
     const [key] = await db
       .select()
-      .from(platformSchema.apiKeys)
-      .where(eq(platformSchema.apiKeys.id, keyId))
+      .from(platformSchema.platformApiKeys)
+      .where(eq(platformSchema.platformApiKeys.id, keyId))
       .limit(1)
 
     if (!key) {

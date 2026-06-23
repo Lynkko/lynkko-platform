@@ -45,11 +45,11 @@ export async function validateApiKey(authHeader: string | null) {
 
   const [record] = await db
     .select()
-    .from(platformSchema.apiKeys)
+    .from(platformSchema.platformApiKeys)
     .where(
       and(
-        eq(platformSchema.apiKeys.keyHash, keyHash),
-        eq(platformSchema.apiKeys.isActive, true)
+        eq(platformSchema.platformApiKeys.keyHash, keyHash),
+        eq(platformSchema.platformApiKeys.isActive, true)
       )
     )
     .limit(1)
@@ -65,9 +65,9 @@ export async function validateApiKey(authHeader: string | null) {
 
   // Update last_used_at
   await db
-    .update(platformSchema.apiKeys)
+    .update(platformSchema.platformApiKeys)
     .set({ lastUsedAt: new Date() })
-    .where(eq(platformSchema.apiKeys.id, record.id))
+    .where(eq(platformSchema.platformApiKeys.id, record.id))
 
   return record
 }
@@ -94,7 +94,7 @@ export async function createApiKeyRecord(
   const { publicKey, hash } = generateApiKey(appId)
 
   const [record] = await db
-    .insert(platformSchema.apiKeys)
+    .insert(platformSchema.platformApiKeys)
     .values({
       name,
       keyHash: hash,
@@ -118,23 +118,23 @@ export async function createApiKeyRecord(
  */
 export async function revokeApiKey(keyId: string) {
   await db
-    .update(platformSchema.apiKeys)
+    .update(platformSchema.platformApiKeys)
     .set({ isActive: false })
-    .where(eq(platformSchema.apiKeys.id, keyId))
+    .where(eq(platformSchema.platformApiKeys.id, keyId))
 }
 
 /**
  * List all API keys (without showing the actual key)
  */
 export async function listApiKeys(appId?: string, tenantId?: string) {
-  const query = db.select().from(platformSchema.apiKeys)
+  const query = db.select().from(platformSchema.platformApiKeys)
 
   if (appId) {
-    return query.where(eq(platformSchema.apiKeys.appId, appId))
+    return query.where(eq(platformSchema.platformApiKeys.appId, appId))
   }
 
   if (tenantId) {
-    return query.where(eq(platformSchema.apiKeys.tenantId, tenantId))
+    return query.where(eq(platformSchema.platformApiKeys.tenantId, tenantId))
   }
 
   return query

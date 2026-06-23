@@ -1,5 +1,5 @@
 import { db, platformSchema } from '@/lib/db'
-import { eq } from 'drizzle-orm'
+import { eq, and } from 'drizzle-orm'
 import { ok, badRequest, notFound, serverError } from '@lynkko/utils'
 import type { NextRequest } from 'next/server'
 
@@ -141,19 +141,17 @@ export async function GET(req: NextRequest) {
     const status = searchParams.get('status')
     const limit = parseInt(searchParams.get('limit') ?? '50')
 
-    let query = db
+    const conditions = [
+      tenantId ? eq(platformSchema.invoices.tenantId, tenantId) : undefined,
+      status ? eq(platformSchema.invoices.status, status) : undefined,
+    ].filter(Boolean) as any[]
+
+    const invoices = await db
       .select()
       .from(platformSchema.invoices)
-
-    if (tenantId) {
-      query = query.where(eq(platformSchema.invoices.tenantId, tenantId))
-    }
-
-    if (status) {
-      query = query.where(eq(platformSchema.invoices.status, status))
-    }
-
-    const invoices = await query.limit(limit).orderBy(platformSchema.invoices.createdAt)
+      .where(conditions.length ? and(...conditions) : undefined)
+      .limit(limit)
+      .orderBy(platformSchema.invoices.createdAt)
 
     return ok({
       invoices,

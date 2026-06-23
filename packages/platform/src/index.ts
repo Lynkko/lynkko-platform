@@ -212,6 +212,162 @@ export const usageRecords = pgTable('usage_records', {
   index('usage_period_idx').on(t.period),
 ])
 
+// ── API Keys (platform_api_keys para evitar conflicto con apps) ───────────────
+
+export const platformApiKeys = pgTable('platform_api_keys', {
+  id:                text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
+  name:              text('name').notNull(),
+  keyHash:           text('key_hash').notNull().unique(),
+  appId:             text('app_id').notNull().references(() => platformApps.id, { onDelete: 'cascade' }),
+  tenantId:          text('tenant_id'),
+  permissions:       jsonb('permissions').$type<string[]>().notNull().default(['read']),
+  rateLimitPerMinute:integer('rate_limit_per_minute').default(60),
+  lastUsedAt:        timestamp('last_used_at'),
+  expiresAt:         timestamp('expires_at'),
+  isActive:          boolean('is_active').notNull().default(true),
+  createdAt:         timestamp('created_at').notNull().defaultNow(),
+  updatedAt:         timestamp('updated_at').notNull().defaultNow(),
+}, (t) => [
+  index('platform_api_key_app_idx').on(t.appId),
+  index('platform_api_key_tenant_idx').on(t.tenantId),
+  index('platform_api_key_active_idx').on(t.isActive),
+])
+
+// ── Webhook deliveries ────────────────────────────────────────────────────────
+
+export const webhookDeliveries = pgTable('webhook_deliveries', {
+  id:           text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
+  eventType:    text('event_type').notNull(),
+  tenantId:     text('tenant_id').notNull(),
+  appId:        text('app_id').notNull(),
+  payload:      jsonb('payload').$type<Record<string, unknown>>().notNull(),
+  webhookUrl:   text('webhook_url').notNull(),
+  status:       text('status').notNull().default('pending'), // pending, delivered, failed, archived
+  httpStatus:   integer('http_status'),
+  responseBody: text('response_body'),
+  errorMessage: text('error_message'),
+  attemptCount: integer('attempt_count').notNull().default(0),
+  maxAttempts:  integer('max_attempts').notNull().default(5),
+  nextRetryAt:  timestamp('next_retry_at'),
+  deliveredAt:  timestamp('delivered_at'),
+  createdAt:    timestamp('created_at').notNull().defaultNow(),
+  updatedAt:    timestamp('updated_at').notNull().defaultNow(),
+}, (t) => [
+  index('webhook_delivery_status_idx').on(t.status),
+  index('webhook_delivery_app_idx').on(t.appId),
+  index('webhook_delivery_tenant_idx').on(t.tenantId),
+])
+
+// ── Audit logs ────────────────────────────────────────────────────────────────
+
+export const auditLogs = pgTable('audit_logs', {
+  id:           text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
+  userId:       text('user_id').notNull(),
+  resourceType: text('resource_type').notNull(),
+  resourceId:   text('resource_id').notNull(),
+  action:       text('action').notNull(),
+  changes:      jsonb('changes').$type<Record<string, unknown>>(),
+  metadata:     jsonb('metadata').$type<Record<string, unknown>>(),
+  ipAddress:    text('ip_address'),
+  userAgent:    text('user_agent'),
+  status:       text('status').notNull().default('success'),
+  errorMessage: text('error_message'),
+  createdAt:    timestamp('created_at').notNull().defaultNow(),
+}, (t) => [
+  index('audit_user_idx').on(t.userId),
+  index('audit_resource_idx').on(t.resourceType, t.resourceId),
+  index('audit_action_idx').on(t.action),
+  index('audit_created_idx').on(t.createdAt),
+])
+
+// ── Billing cycles ────────────────────────────────────────────────────────────
+
+export const billingCycles = pgTable('billing_cycles', {
+  id:                    text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
+  subscriptionId:        text('subscription_id').notNull().references(() => subscriptions.id, { onDelete: 'cascade' }),
+  tenantId:              text('tenant_id').notNull(),
+  appId:                 text('app_id').notNull(),
+  cycleStart:            timestamp('cycle_start').notNull(),
+  cycleEnd:              timestamp('cycle_end').notNull(),
+  nextInvoiceDate:       timestamp('next_invoice_date').notNull(),
+  invoiceId:             text('invoice_id').references(() => invoices.id),
+  invoiceGeneratedAt:    timestamp('invoice_generated_at'),
+  paymentStatus:         text('payment_status').notNull().default('pending'),
+  paymentAttempts:       integer('payment_attempts').notNull().default(0),
+  maxPaymentAttempts:    integer('max_payment_attempts').notNull().default(3),
+  lastPaymentAttemptAt:  timestamp('last_payment_attempt_at'),
+  lastPaymentError:      text('last_payment_error'),
+  metadata:              jsonb('metadata').$type<Record<string, unknown>>(),
+  createdAt:             timestamp('created_at').notNull().defaultNow(),
+  updatedAt:             timestamp('updated_at').notNull().defaultNow(),
+}, (t) => [
+  index('billing_cycle_subscription_idx').on(t.subscriptionId),
+  index('billing_cycle_tenant_idx').on(t.tenantId),
+])
+
+// ── Wompi transactions ────────────────────────────────────────────────────────
+
+export const wompiTransactions = pgTable('wompi_transactions', {
+  id:            text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
+  invoiceId:     text('invoice_id').notNull().references(() => invoices.id, { onDelete: 'cascade' }),
+  subscriptionId:text('subscription_id').notNull().references(() => subscriptions.id, { onDelete: 'cascade' }),
+  tenantId:      text('tenant_id').notNull(),
+  amount:        integer('amount').notNull(),
+  currency:      text('currency').notNull().default('COP'),
+  reference:     text('reference').notNull().unique(),
+  status:        text('status').notNull(),
+  paymentMethod: jsonb('payment_method').$type<Record<string, unknown>>(),
+  wompiResponse: jsonb('wompi_response').$type<Record<string, unknown>>(),
+  errorMessage:  text('error_message'),
+  processedAt:   timestamp('processed_at'),
+  createdAt:     timestamp('created_at').notNull().defaultNow(),
+  updatedAt:     timestamp('updated_at').notNull().defaultNow(),
+}, (t) => [
+  index('wompi_invoice_idx').on(t.invoiceId),
+  index('wompi_tenant_idx').on(t.tenantId),
+  index('wompi_status_idx').on(t.status),
+])
+
+// ── Payment methods ───────────────────────────────────────────────────────────
+
+export const paymentMethods = pgTable('payment_methods', {
+  id:        text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
+  tenantId:  text('tenant_id').notNull(),
+  type:      text('type').notNull(),
+  brand:     text('brand'),
+  lastFour:  text('last_four'),
+  token:     text('token').unique(),
+  isDefault: boolean('is_default').notNull().default(false),
+  isActive:  boolean('is_active').notNull().default(true),
+  expiresAt: timestamp('expires_at'),
+  createdAt: timestamp('created_at').notNull().defaultNow(),
+  updatedAt: timestamp('updated_at').notNull().defaultNow(),
+}, (t) => [
+  index('payment_method_tenant_idx').on(t.tenantId),
+  index('payment_method_default_idx').on(t.tenantId, t.isDefault),
+])
+
+// ── Failed payments ───────────────────────────────────────────────────────────
+
+export const failedPayments = pgTable('failed_payments', {
+  id:             text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
+  invoiceId:      text('invoice_id').notNull().references(() => invoices.id, { onDelete: 'cascade' }),
+  billingCycleId: text('billing_cycle_id').references(() => billingCycles.id, { onDelete: 'set null' }),
+  tenantId:       text('tenant_id').notNull(),
+  amount:         integer('amount').notNull(),
+  currency:       text('currency').notNull().default('COP'),
+  reason:         text('reason').notNull(),
+  attemptCount:   integer('attempt_count').notNull().default(0),
+  maxAttempts:    integer('max_attempts').notNull().default(5),
+  nextRetryAt:    timestamp('next_retry_at'),
+  lastRetryAt:    timestamp('last_retry_at'),
+  resolvedAt:     timestamp('resolved_at'),
+  createdAt:      timestamp('created_at').notNull().defaultNow(),
+  updatedAt:      timestamp('updated_at').notNull().defaultNow(),
+}, (t) => [
+  index('failed_payment_tenant_idx').on(t.tenantId),
+])
+
 // ─── Drizzle inferred types ───────────────────────────────────────────────────
 
 export type PlatformApp        = typeof platformApps.$inferSelect
@@ -224,6 +380,13 @@ export type Subscription       = typeof subscriptions.$inferSelect
 export type Invoice            = typeof invoices.$inferSelect
 export type InvoiceItem        = typeof invoiceItems.$inferSelect
 export type UsageRecord        = typeof usageRecords.$inferSelect
+export type PlatformApiKey     = typeof platformApiKeys.$inferSelect
+export type WebhookDelivery    = typeof webhookDeliveries.$inferSelect
+export type AuditLog           = typeof auditLogs.$inferSelect
+export type BillingCycle       = typeof billingCycles.$inferSelect
+export type WompiTransaction   = typeof wompiTransactions.$inferSelect
+export type PaymentMethod      = typeof paymentMethods.$inferSelect
+export type FailedPayment      = typeof failedPayments.$inferSelect
 
 export const platformSchema = {
   platformApps,
@@ -236,6 +399,13 @@ export const platformSchema = {
   invoices,
   invoiceItems,
   usageRecords,
+  platformApiKeys,
+  webhookDeliveries,
+  auditLogs,
+  billingCycles,
+  wompiTransactions,
+  paymentMethods,
+  failedPayments,
 }
 
 // ─── SDK input types ──────────────────────────────────────────────────────────
