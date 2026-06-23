@@ -25,8 +25,8 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Build all packages
-        run: pnpm build
+      - name: Build packages
+        run: pnpm --filter './packages/*' build
 
       - name: Inject auth token into .npmrc
         run: sed -i "s|\${GITHUB_TOKEN}|${{ secrets.GITHUB_TOKEN }}|g" .npmrc
