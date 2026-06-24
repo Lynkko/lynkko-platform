@@ -117,8 +117,10 @@ export const appPlans = pgTable('app_plans', {
   slug:         text('slug').notNull(),
   name:         text('name').notNull(),
   description:  text('description'),
+  billingModel: text('billing_model').notNull().default('flat'), // 'flat' | 'per_seat'
   monthlyPrice: integer('monthly_price').notNull().default(0),
   annualPrice:  integer('annual_price').notNull().default(0),
+  pricePerSeat: integer('price_per_seat').notNull().default(0),
   currency:     text('currency').notNull().default('COP'),
   maxSeats:     integer('max_seats'),
   features:     jsonb('features').$type<string[]>(),
@@ -431,18 +433,20 @@ export interface CreateTenantInput {
 }
 
 export interface CreatePlanInput {
-  appId:        string
-  slug:         string
-  name:         string
-  description?: string
-  monthlyPrice: number
-  annualPrice:  number
-  currency?:    string
-  maxSeats?:    number
-  features?:    string[]
-  isPublic?:    boolean
-  sortOrder?:   number
-  isActive?:    boolean
+  appId:         string
+  slug:          string
+  name:          string
+  description?:  string
+  billingModel?: 'flat' | 'per_seat'
+  monthlyPrice:  number
+  annualPrice:   number
+  pricePerSeat?: number
+  currency?:     string
+  maxSeats?:     number
+  features?:     string[]
+  isPublic?:     boolean
+  sortOrder?:    number
+  isActive?:     boolean
 }
 
 export interface InvoiceItemInput {

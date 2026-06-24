@@ -26,12 +26,14 @@ export async function createPlanAction(formData: FormData) {
 
   await platform.createPlan({
     appId,
-    name:        name.trim(),
-    slug:        slug.trim(),
-    description: description?.trim() || undefined,
-    currency:    currency || 'COP',
+    name:         name.trim(),
+    slug:         slug.trim(),
+    description:  description?.trim() || undefined,
+    billingModel: (formData.get('billingModel') as 'flat' | 'per_seat') || 'flat',
+    currency:     currency || 'COP',
     monthlyPrice,
     annualPrice,
+    pricePerSeat: Number(formData.get('pricePerSeat')) || 0,
     maxSeats,
     sortOrder,
     features,
@@ -49,8 +51,10 @@ export async function updatePlanAction(planId: string, formData: FormData) {
   const data: Partial<{
     name: string
     description: string
+    billingModel: 'flat' | 'per_seat'
     monthlyPrice: number
     annualPrice: number
+    pricePerSeat: number
     maxSeats: number
     sortOrder: number
     features: string[]
@@ -63,6 +67,12 @@ export async function updatePlanAction(planId: string, formData: FormData) {
 
   const desc = (formData.get('description') as string)?.trim()
   data.description = desc || undefined
+
+  const billingModel = formData.get('billingModel') as string
+  if (billingModel) data.billingModel = billingModel as 'flat' | 'per_seat'
+
+  const pricePerSeat = formData.get('pricePerSeat')
+  if (pricePerSeat !== null) data.pricePerSeat = Number(pricePerSeat) || 0
 
   const monthlyPrice = formData.get('monthlyPrice')
   if (monthlyPrice) data.monthlyPrice = Number(monthlyPrice)

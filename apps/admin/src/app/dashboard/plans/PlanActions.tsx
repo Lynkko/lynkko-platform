@@ -10,9 +10,11 @@ type Plan = {
   name: string
   slug: string
   description: string | null
+  billingModel: string
   currency: string
   monthlyPrice: number
   annualPrice: number
+  pricePerSeat: number
   maxSeats: number | null
   sortOrder: number
   features: string[] | null
@@ -75,19 +77,36 @@ export function PlanActions({ plan }: { plan: Plan }) {
           </div>
         </div>
 
+        <div className="space-y-1">
+          <label className="text-xs font-medium text-muted-foreground">Modelo de cobro</label>
+          <select
+            name="billingModel"
+            defaultValue={plan.billingModel}
+            className="w-full h-9 px-3 rounded-md border border-input bg-background text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+          >
+            <option value="flat">Tarifa fija</option>
+            <option value="per_seat">Por usuario</option>
+          </select>
+        </div>
+
         <div className="grid grid-cols-3 gap-3">
           <div className="space-y-1">
             <label className="text-xs font-medium text-muted-foreground">Precio/mes</label>
-            <Input name="monthlyPrice" type="number" min="0" defaultValue={plan.monthlyPrice} required />
+            <Input name="monthlyPrice" type="number" min="0" defaultValue={plan.monthlyPrice} />
           </div>
           <div className="space-y-1">
             <label className="text-xs font-medium text-muted-foreground">Precio/año</label>
             <Input name="annualPrice" type="number" min="0" defaultValue={plan.annualPrice} />
           </div>
           <div className="space-y-1">
-            <label className="text-xs font-medium text-muted-foreground">Máx. seats</label>
-            <Input name="maxSeats" type="number" min="1" defaultValue={plan.maxSeats ?? ''} placeholder="Ilimitado" />
+            <label className="text-xs font-medium text-muted-foreground">Precio/usuario</label>
+            <Input name="pricePerSeat" type="number" min="0" defaultValue={plan.pricePerSeat} />
           </div>
+        </div>
+
+        <div className="space-y-1">
+          <label className="text-xs font-medium text-muted-foreground">Máx. seats</label>
+          <Input name="maxSeats" type="number" min="1" defaultValue={plan.maxSeats ?? ''} placeholder="Ilimitado" />
         </div>
 
         <div className="grid grid-cols-2 gap-3">

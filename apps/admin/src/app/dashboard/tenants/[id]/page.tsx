@@ -7,6 +7,7 @@ import { notFound } from 'next/navigation'
 import { LYNKKO_APPS, type LynkkoAppId, type AppPlan } from '@lynkko/platform'
 import { ToggleAppAction } from './ToggleAppAction'
 import { TabNav } from './TabNav'
+import { InfoTab } from './InfoTab'
 import { SubscriptionsTab } from './SubscriptionsTab'
 import { BillingTab } from './BillingTab'
 import { UsageTab } from './UsageTab'
@@ -30,7 +31,7 @@ const APP_NAMES: Record<string, string> = {
 export default async function TenantDetailPage({ params, searchParams }: Props) {
   const { id }  = await params
   const { tab } = await searchParams
-  const activeTab = tab ?? 'apps'
+  const activeTab = tab ?? 'info'
 
   // Try to load from tenants table first, fall back to raw tenantId from app access
   const tenant = await platform.getTenant(id)
@@ -55,7 +56,7 @@ export default async function TenantDetailPage({ params, searchParams }: Props) 
 
   // Data needed per tab (fetch only what's active)
   const [subscriptions, invoices, usageRecords, allPlans] = await Promise.all([
-    activeTab === 'subscriptions' || activeTab === 'apps'
+    activeTab === 'subscriptions' || activeTab === 'apps' || activeTab === 'billing'
       ? platform.listSubscriptions(tenantId)
       : Promise.resolve([]),
     activeTab === 'billing'
@@ -182,15 +183,19 @@ export default async function TenantDetailPage({ params, searchParams }: Props) 
         />
       )}
 
+      {activeTab === 'info' && tenant && (
+        <InfoTab tenant={tenant} />
+      )}
+
       {activeTab === 'billing' && (
-        <BillingTab invoices={invoices} tenantId={tenantId} />
+        <BillingTab invoices={invoices} tenantId={tenantId} subscriptions={subscriptions} />
       )}
 
       {activeTab === 'usage' && (
         <UsageTab records={usageRecords} />
       )}
 
-      {activeTab === 'brand' && (
+      {activeTab === 'colores' && (
         <BrandTab tenantId={tenantId} accesses={accesses} />
       )}
     </div>

@@ -52,7 +52,18 @@ export function NewPlanForm({ apps }: { apps: PlatformApp[] }) {
         <Input name="description" placeholder="Para equipos medianos" />
       </div>
 
-      <div className="grid grid-cols-3 gap-3">
+      <div className="grid grid-cols-2 gap-3">
+        <div className="space-y-1.5">
+          <label className="text-sm font-medium text-foreground">Modelo de cobro</label>
+          <select
+            name="billingModel"
+            defaultValue="flat"
+            className="w-full h-10 px-3 rounded-md border border-input bg-background text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+          >
+            <option value="flat">Tarifa fija</option>
+            <option value="per_seat">Por usuario</option>
+          </select>
+        </div>
         <div className="space-y-1.5">
           <label className="text-sm font-medium text-foreground">Moneda</label>
           <select
@@ -65,13 +76,20 @@ export function NewPlanForm({ apps }: { apps: PlatformApp[] }) {
             <option value="MXN">MXN</option>
           </select>
         </div>
+      </div>
+
+      <div className="grid grid-cols-3 gap-3">
         <div className="space-y-1.5">
-          <label className="text-sm font-medium text-foreground">Precio/mes *</label>
-          <Input name="monthlyPrice" type="number" min="0" placeholder="150000" required />
+          <label className="text-sm font-medium text-foreground">Precio/mes</label>
+          <Input name="monthlyPrice" type="number" min="0" placeholder="150000" />
         </div>
         <div className="space-y-1.5">
           <label className="text-sm font-medium text-foreground">Precio/año</label>
           <Input name="annualPrice" type="number" min="0" placeholder="1500000" />
+        </div>
+        <div className="space-y-1.5">
+          <label className="text-sm font-medium text-foreground">Precio/usuario</label>
+          <Input name="pricePerSeat" type="number" min="0" placeholder="25000" />
         </div>
       </div>
 

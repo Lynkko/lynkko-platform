@@ -2,7 +2,7 @@
 
 import { useState, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
-import type { Invoice } from '@lynkko/platform'
+import type { Invoice, SubscriptionWithPlan } from '@lynkko/platform'
 import { Badge, Button, Card, CardContent, CardHeader, CardTitle, Input } from '@lynkko/ui'
 import { createInvoiceAction, markInvoicePaidAction } from '@/app/dashboard/billing/actions'
 
@@ -13,87 +13,91 @@ const STATUS_MAP: Record<string, { label: string; variant: 'success' | 'warning'
   void:  { label: 'Anulada',  variant: 'destructive' },
 }
 
-function NewInvoiceForm({ tenantId, onDone }: { tenantId: string; onDone: () => void }) {
+function NewInvoiceForm({
+  tenantId,
+  subscriptions,
+  onDone,
+}: {
+  tenantId: string
+  subscriptions: SubscriptionWithPlan[]
+  onDone: () => void
+}) {
   const [isPending, startTransition] = useTransition()
   const router = useRouter()
-  const [items, setItems] = useState([{ description: '', unit_price: '', quantity: '1' }])
+  const [selectedSubs, setSelectedSubs] = useState<string[]>([])
 
-  function addItem() {
-    setItems((prev) => [...prev, { description: '', unit_price: '', quantity: '1' }])
-  }
-
-  function removeItem(i: number) {
-    setItems((prev) => prev.filter((_, idx) => idx !== i))
-  }
-
-  function updateItem(i: number, field: string, value: string) {
-    setItems((prev) => prev.map((item, idx) => idx === i ? { ...item, [field]: value } : item))
+  function toggleSub(id: string) {
+    setSelectedSubs((prev) =>
+      prev.includes(id) ? prev.filter((s) => s !== id) : [...prev, id]
+    )
   }
 
   function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault()
     const fd = new FormData(e.currentTarget)
     const currency = fd.get('currency') as string || 'COP'
-    const notes = fd.get('notes') as string || undefined
     const due_date = fd.get('due_date') as string || undefined
+    const notes    = fd.get('notes') as string || undefined
 
-    const invoiceItems = items.map((item) => ({
-      description: item.description.trim(),
-      unit_price: Number(item.unit_price) || 0,
-      quantity: Number(item.quantity) || 1,
-    })).filter((item) => item.description && item.unit_price > 0)
+    const items = subscriptions
+      .filter((s) => selectedSubs.includes(s.id))
+      .map((s) => ({
+        description:     `${s.plan.name} — ${s.appId} (${s.seats} seat${s.seats !== 1 ? 's' : ''})`,
+        subscription_id: s.id,
+        unit_price:      s.plan.monthlyPrice,
+        quantity:        1,
+      }))
 
-    if (invoiceItems.length === 0) return
+    if (items.length === 0) return
 
     startTransition(async () => {
-      await createInvoiceAction(tenantId, invoiceItems, { currency, notes, due_date })
+      await createInvoiceAction(tenantId, items, { currency, due_date, notes })
       onDone()
       router.refresh()
     })
   }
 
+  const total = subscriptions
+    .filter((s) => selectedSubs.includes(s.id))
+    .reduce((sum, s) => sum + s.plan.monthlyPrice, 0)
+
   return (
     <form onSubmit={handleSubmit} className="space-y-4 p-4 border border-border rounded-lg bg-muted/30">
       <h3 className="text-sm font-semibold text-foreground">Nueva Factura</h3>
 
-      <div className="space-y-2">
-        {items.map((item, i) => (
-          <div key={i} className="flex items-center gap-2">
-            <Input
-              placeholder="Descripción del ítem"
-              value={item.description}
-              onChange={(e) => updateItem(i, 'description', e.target.value)}
-              required
-              className="flex-1"
-            />
-            <Input
-              type="number"
-              placeholder="Precio"
-              value={item.unit_price}
-              onChange={(e) => updateItem(i, 'unit_price', e.target.value)}
-              min="0"
-              required
-              className="w-28"
-            />
-            <Input
-              type="number"
-              placeholder="Cant."
-              value={item.quantity}
-              onChange={(e) => updateItem(i, 'quantity', e.target.value)}
-              min="1"
-              className="w-16"
-            />
-            {items.length > 1 && (
-              <Button type="button" size="sm" variant="ghost" className="text-destructive" onClick={() => removeItem(i)}>
-                ✕
-              </Button>
-            )}
-          </div>
-        ))}
-        <Button type="button" size="sm" variant="ghost" onClick={addItem}>
-          + Agregar ítem
-        </Button>
-      </div>
+      {subscriptions.length === 0 ? (
+        <p className="text-sm text-muted-foreground">Este tenant no tiene suscripciones activas.</p>
+      ) : (
+        <div className="space-y-2">
+          <p className="text-xs text-muted-foreground font-medium uppercase tracking-wide">Suscripciones a facturar</p>
+          {subscriptions.map((s) => (
+            <label
+              key={s.id}
+              className={`flex items-center justify-between p-3 rounded-md border cursor-pointer transition-colors ${
+                selectedSubs.includes(s.id)
+                  ? 'border-primary bg-primary/5'
+                  : 'border-border hover:border-muted-foreground/40'
+              }`}
+            >
+              <div className="flex items-center gap-3">
+                <input
+                  type="checkbox"
+                  checked={selectedSubs.includes(s.id)}
+                  onChange={() => toggleSub(s.id)}
+                  className="rounded"
+                />
+                <div>
+                  <p className="text-sm font-medium text-foreground">{s.plan.name}</p>
+                  <p className="text-xs text-muted-foreground">{s.appId} · {s.seats} seat{s.seats !== 1 ? 's' : ''} · {s.status}</p>
+                </div>
+              </div>
+              <span className="text-sm font-medium text-foreground">
+                {s.plan.currency} {s.plan.monthlyPrice.toLocaleString('es-CO')}
+              </span>
+            </label>
+          ))}
+        </div>
+      )}
 
       <div className="grid grid-cols-3 gap-3">
         <div className="space-y-1">
@@ -117,8 +121,17 @@ function NewInvoiceForm({ tenantId, onDone }: { tenantId: string; onDone: () => 
         </div>
       </div>
 
+      {selectedSubs.length > 0 && (
+        <div className="flex items-center justify-between py-2 px-3 bg-muted rounded-md">
+          <span className="text-sm text-muted-foreground">{selectedSubs.length} suscripción{selectedSubs.length !== 1 ? 'es' : ''}</span>
+          <span className="text-sm font-semibold text-foreground">
+            COP {total.toLocaleString('es-CO')}
+          </span>
+        </div>
+      )}
+
       <div className="flex items-center gap-2">
-        <Button type="submit" size="sm" disabled={isPending}>
+        <Button type="submit" size="sm" disabled={isPending || selectedSubs.length === 0}>
           {isPending ? 'Creando...' : 'Crear Factura'}
         </Button>
         <Button type="button" size="sm" variant="ghost" onClick={onDone}>
@@ -151,7 +164,15 @@ function MarkPaidButton({ invoiceId }: { invoiceId: string }) {
   )
 }
 
-export function BillingTab({ invoices, tenantId }: { invoices: Invoice[]; tenantId: string }) {
+export function BillingTab({
+  invoices,
+  tenantId,
+  subscriptions,
+}: {
+  invoices: Invoice[]
+  tenantId: string
+  subscriptions: SubscriptionWithPlan[]
+}) {
   const [showForm, setShowForm] = useState(false)
 
   return (
@@ -168,7 +189,11 @@ export function BillingTab({ invoices, tenantId }: { invoices: Invoice[]; tenant
       </CardHeader>
       <CardContent className="space-y-4">
         {showForm && (
-          <NewInvoiceForm tenantId={tenantId} onDone={() => setShowForm(false)} />
+          <NewInvoiceForm
+            tenantId={tenantId}
+            subscriptions={subscriptions}
+            onDone={() => setShowForm(false)}
+          />
         )}
 
         {invoices.length === 0 ? (
