@@ -1,6 +1,17 @@
 import { NextRequest, NextResponse } from 'next/server'
 
-const PUBLIC_PATHS = ['/login', '/api/auth']
+// Rutas públicas: login + API externas (autenticadas con Bearer token en el handler)
+const PUBLIC_PATHS = [
+  '/login',
+  '/api/auth',
+  '/api/apps/',
+  '/api/subscriptions/',
+  '/api/marketplace/',
+  '/api/cron/',
+  '/api/webhooks/',
+  '/api/invoices',
+  '/api/tenants/',
+]
 
 export function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl
