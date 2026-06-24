@@ -183,7 +183,7 @@ export default async function TenantDetailPage({ params, searchParams }: Props) 
       )}
 
       {activeTab === 'billing' && (
-        <BillingTab invoices={invoices} />
+        <BillingTab invoices={invoices} tenantId={tenantId} />
       )}
 
       {activeTab === 'usage' && (

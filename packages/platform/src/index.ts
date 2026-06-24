@@ -521,6 +521,7 @@ export interface PlatformClient {
   listPlans(appId?: string): Promise<AppPlan[]>
   createPlan(data: CreatePlanInput): Promise<AppPlan>
   updatePlan(id: string, data: Partial<CreatePlanInput>): Promise<void>
+  deletePlan(id: string): Promise<void>
 
   // ── Subscriptions ───────────────────────────────────────────────────────────
   getSubscription(tenantId: string, appId: LynkkoAppId): Promise<SubscriptionWithPlan | null>
@@ -765,6 +766,19 @@ export function createPlatformClient(db: AnyDb): PlatformClient {
 
     async updatePlan(id, data) {
       await db.update(appPlans).set(data).where(eq(appPlans.id, id))
+    },
+
+    async deletePlan(id) {
+      const [sub] = await db
+        .select({ id: subscriptions.id })
+        .from(subscriptions)
+        .where(eq(subscriptions.planId, id))
+        .limit(1)
+      if (sub) {
+        await db.update(appPlans).set({ isActive: false }).where(eq(appPlans.id, id))
+      } else {
+        await db.delete(appPlans).where(eq(appPlans.id, id))
+      }
     },
 
     // ── Subscriptions ─────────────────────────────────────────────────────────

@@ -42,75 +42,55 @@ export async function createPlanAction(formData: FormData) {
   revalidatePath('/dashboard/plans')
 }
 
-export async function updatePlanAction(
-  planId: string,
-  formData: FormData
-) {
+export async function updatePlanAction(planId: string, formData: FormData) {
   await requireSuperadmin()
 
-  const baseUrl = process.env.NEXTAUTH_URL || 'http://localhost:3000'
+  const featuresRaw = formData.get('features') as string | null
+  const data: Partial<{
+    name: string
+    description: string
+    monthlyPrice: number
+    annualPrice: number
+    maxSeats: number
+    sortOrder: number
+    features: string[]
+    isPublic: boolean
+    isActive: boolean
+  }> = {}
 
-  const updateData: any = {}
+  const name = (formData.get('name') as string)?.trim()
+  if (name) data.name = name
 
-  const name = formData.get('name')
-  if (name) updateData.name = (name as string).trim()
-
-  const description = formData.get('description')
-  if (description !== null) updateData.description = (description as string).trim() || null
+  const desc = (formData.get('description') as string)?.trim()
+  data.description = desc || undefined
 
   const monthlyPrice = formData.get('monthlyPrice')
-  if (monthlyPrice) updateData.monthly_price = Number(monthlyPrice)
+  if (monthlyPrice) data.monthlyPrice = Number(monthlyPrice)
 
   const annualPrice = formData.get('annualPrice')
-  if (annualPrice) updateData.annual_price = Number(annualPrice)
+  if (annualPrice !== null) data.annualPrice = Number(annualPrice) || 0
 
   const maxSeats = formData.get('maxSeats')
-  if (maxSeats) updateData.max_seats = Number(maxSeats)
+  if (maxSeats) data.maxSeats = Number(maxSeats)
 
   const sortOrder = formData.get('sortOrder')
-  if (sortOrder) updateData.sort_order = Number(sortOrder)
+  if (sortOrder) data.sortOrder = Number(sortOrder) || 0
 
-  const featuresRaw = formData.get('features')
-  if (featuresRaw) {
-    updateData.features = (featuresRaw as string)
-      .split('\n')
-      .map((f) => f.trim())
-      .filter(Boolean)
+  if (featuresRaw !== null) {
+    data.features = featuresRaw
+      ? featuresRaw.split('\n').map((f) => f.trim()).filter(Boolean)
+      : []
   }
 
-  const isPublic = formData.get('isPublic')
-  if (isPublic !== null) updateData.is_public = isPublic === 'on'
+  data.isPublic = formData.get('isPublic') === 'on'
+  data.isActive = formData.get('isActive') === 'on'
 
-  const isActive = formData.get('isActive')
-  if (isActive !== null) updateData.is_active = isActive === 'on'
-
-  const response = await fetch(`${baseUrl}/api/plans/${planId}`, {
-    method: 'PUT',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(updateData),
-  })
-
-  if (!response.ok) {
-    const error = await response.json()
-    throw new Error(error.error || 'Failed to update plan')
-  }
-
+  await platform.updatePlan(planId, data)
   revalidatePath('/dashboard/plans')
 }
 
 export async function deletePlanAction(planId: string) {
   await requireSuperadmin()
-
-  const baseUrl = process.env.NEXTAUTH_URL || 'http://localhost:3000'
-
-  const response = await fetch(`${baseUrl}/api/plans/${planId}`, {
-    method: 'DELETE',
-  })
-
-  if (!response.ok) {
-    const error = await response.json()
-    throw new Error(error.error || 'Failed to delete plan')
-  }
-
+  await platform.deletePlan(planId)
   revalidatePath('/dashboard/plans')
 }

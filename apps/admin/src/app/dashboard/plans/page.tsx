@@ -2,6 +2,7 @@ import { platform } from '@/lib/platform'
 import { db, platformSchema } from '@/lib/db'
 import { Badge, Card, CardContent, CardHeader, CardTitle } from '@lynkko/ui'
 import { NewPlanForm } from './NewPlanForm'
+import { PlanActions } from './PlanActions'
 
 export default async function PlansPage() {
   const [plans, apps] = await Promise.all([
@@ -42,31 +43,36 @@ export default async function PlansPage() {
                 ) : (
                   <div className="divide-y divide-border">
                     {(plansByApp[app.id] ?? []).map((plan) => (
-                      <div key={plan.id} className="flex items-center justify-between px-6 py-3">
-                        <div>
-                          <div className="flex items-center gap-2">
-                            <p className="text-sm font-medium text-foreground">{plan.name}</p>
-                            <Badge variant={plan.isActive ? 'success' : 'default'}>
-                              {plan.isActive ? 'Activo' : 'Inactivo'}
-                            </Badge>
-                            {!plan.isPublic && (
-                              <Badge variant="default">Privado</Badge>
-                            )}
+                      <div key={plan.id} className="px-6 py-3">
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <div className="flex items-center gap-2">
+                              <p className="text-sm font-medium text-foreground">{plan.name}</p>
+                              <Badge variant={plan.isActive ? 'success' : 'default'}>
+                                {plan.isActive ? 'Activo' : 'Inactivo'}
+                              </Badge>
+                              {!plan.isPublic && (
+                                <Badge variant="default">Privado</Badge>
+                              )}
+                            </div>
+                            <p className="text-xs font-mono text-muted-foreground mt-0.5">{plan.slug}</p>
                           </div>
-                          <p className="text-xs font-mono text-muted-foreground mt-0.5">{plan.slug}</p>
-                        </div>
-                        <div className="text-right">
-                          <p className="text-sm font-medium text-foreground">
-                            {plan.currency} {plan.monthlyPrice.toLocaleString('es-CO')}/mes
-                          </p>
-                          {plan.annualPrice > 0 && (
-                            <p className="text-xs text-muted-foreground">
-                              {plan.currency} {plan.annualPrice.toLocaleString('es-CO')}/año
-                            </p>
-                          )}
-                          {plan.maxSeats && (
-                            <p className="text-xs text-muted-foreground">Máx. {plan.maxSeats} seats</p>
-                          )}
+                          <div className="flex items-center gap-4">
+                            <div className="text-right">
+                              <p className="text-sm font-medium text-foreground">
+                                {plan.currency} {plan.monthlyPrice.toLocaleString('es-CO')}/mes
+                              </p>
+                              {plan.annualPrice > 0 && (
+                                <p className="text-xs text-muted-foreground">
+                                  {plan.currency} {plan.annualPrice.toLocaleString('es-CO')}/año
+                                </p>
+                              )}
+                              {plan.maxSeats && (
+                                <p className="text-xs text-muted-foreground">Máx. {plan.maxSeats} seats</p>
+                              )}
+                            </div>
+                            <PlanActions plan={plan} />
+                          </div>
                         </div>
                       </div>
                     ))}
