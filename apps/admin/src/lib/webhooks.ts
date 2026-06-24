@@ -6,6 +6,9 @@ const PLATFORM_WEBHOOK_SECRET = process.env.PLATFORM_WEBHOOK_SECRET!
 export interface WebhookEvent {
   event: 'subscription_activated' | 'plan_changed' | 'subscription_suspended' | 'subscription_canceled' | 'subscription_updated' | 'module_enabled' | 'module_disabled' | 'app_enabled' | 'app_disabled'
   tenant_id: string
+  tenant_name?: string
+  tenant_slug?: string
+  tenant_email?: string
   subscription_id?: string
   module_id?: string
   module_slug?: string

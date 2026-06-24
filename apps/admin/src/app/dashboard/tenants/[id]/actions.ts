@@ -3,6 +3,9 @@
 import { revalidatePath } from 'next/cache'
 import { platform } from '@/lib/platform'
 import { requireSuperadmin } from '@/lib/session'
+import { sendWebhookAsync } from '@/lib/webhooks'
+import { db, platformSchema } from '@/lib/db'
+import { eq } from 'drizzle-orm'
 import type { LynkkoAppId } from '@lynkko/platform'
 
 export async function toggleTenantApp(tenantId: string, appId: LynkkoAppId, enable: boolean) {
@@ -22,8 +25,41 @@ export async function addSubscriptionAction(
   seats: number,
 ) {
   await requireSuperadmin()
-  await platform.createSubscription(tenantId, appId, planId, { seats })
+
+  const [sub, tenant, plan] = await Promise.all([
+    platform.createSubscription(tenantId, appId, planId, { seats }),
+    platform.getTenant(tenantId),
+    db.select().from(platformSchema.appPlans).where(eq(platformSchema.appPlans.id, planId)).limit(1).then(r => r[0]),
+  ])
+
   await platform.enableApp(tenantId, appId)
+
+  if (appId === 'turnflow' && tenant && plan) {
+    const modules = await db
+      .select({ slug: platformSchema.platformModules.slug })
+      .from(platformSchema.platformModules)
+      .where(eq(platformSchema.platformModules.appId, appId))
+
+    const planFeatures = (plan.features as string[] | null) ?? []
+    const activeModules = Object.fromEntries(
+      modules.map(m => [m.slug, planFeatures.includes(m.slug)])
+    )
+
+    const periodEnd = new Date(sub.currentPeriodEnd)
+
+    sendWebhookAsync({
+      event: 'subscription_activated',
+      tenant_id:    tenantId,
+      tenant_name:  tenant.name,
+      tenant_slug:  tenant.slug,
+      tenant_email: tenant.contactEmail ?? undefined,
+      subscription_id: sub.id,
+      plan: { id: plan.id, name: plan.name, slug: plan.slug },
+      active_modules: activeModules,
+      period_end: periodEnd.toISOString(),
+    })
+  }
+
   revalidatePath(`/dashboard/tenants/${tenantId}`)
 }
 

@@ -68,16 +68,23 @@ export async function POST(req: NextRequest) {
       subscription = created
     }
 
-    // Get active modules for this plan
-    const modules = await db
-      .select({
-        slug: platformSchema.platformModules.slug,
-      })
-      .from(platformSchema.platformModules)
-      .where(eq(platformSchema.platformModules.appId, app_id))
+    // Get tenant info + active modules for this plan
+    const [modules, tenant] = await Promise.all([
+      db
+        .select({ slug: platformSchema.platformModules.slug })
+        .from(platformSchema.platformModules)
+        .where(eq(platformSchema.platformModules.appId, app_id)),
+      db
+        .select()
+        .from(platformSchema.tenants)
+        .where(eq(platformSchema.tenants.id, tenant_id))
+        .limit(1)
+        .then(r => r[0] ?? null),
+    ])
 
+    const planFeatures = (plan.features as string[] | null) ?? []
     const activeModules = Object.fromEntries(
-      modules.map(m => [m.slug, true])
+      modules.map(m => [m.slug, planFeatures.includes(m.slug)])
     )
 
     // Send webhook to app if subscription was created or plan changed
@@ -86,12 +93,11 @@ export async function POST(req: NextRequest) {
       sendWebhookAsync({
         event: eventType,
         tenant_id,
+        tenant_name:  tenant?.name,
+        tenant_slug:  tenant?.slug,
+        tenant_email: tenant?.contactEmail ?? undefined,
         subscription_id: subscription.id,
-        plan: {
-          id: plan.id,
-          name: plan.name,
-          slug: plan.slug,
-        },
+        plan: { id: plan.id, name: plan.name, slug: plan.slug },
         active_modules: activeModules,
         period_end: periodEnd.toISOString(),
       })
