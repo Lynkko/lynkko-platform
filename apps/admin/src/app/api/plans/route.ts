@@ -1,6 +1,6 @@
 import { db, platformSchema } from '@/lib/db'
 import { eq, and } from 'drizzle-orm'
-import { ok, badRequest, notFound, serverError } from '@lynkko/utils'
+import { ok, badRequest, notFound, unauthorized, serverError } from '@lynkko/utils'
 import type { NextRequest } from 'next/server'
 
 /**
@@ -8,8 +8,15 @@ import type { NextRequest } from 'next/server'
  * List all plans, optionally filtered by app_id
  * Query params: ?app_id=turnflow
  */
+const PLATFORM_API_KEY = process.env.PLATFORM_API_KEY!
+
 export async function GET(req: NextRequest) {
   try {
+    const token = req.headers.get('authorization')?.replace('Bearer ', '')
+    if (!token || token !== PLATFORM_API_KEY) {
+      return unauthorized('Invalid or missing API key')
+    }
+
     const { searchParams } = req.nextUrl
     const appId = searchParams.get('app_id')
 

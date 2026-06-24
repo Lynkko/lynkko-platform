@@ -11,6 +11,7 @@ const PUBLIC_PATHS = [
   '/api/webhooks/',
   '/api/invoices',
   '/api/tenants/',
+  '/api/plans',
 ]
 
 export function middleware(req: NextRequest) {
