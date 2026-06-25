@@ -10,6 +10,7 @@ interface Tenant {
   name: string
   slug: string
   status: string
+  contactName: string | null
   contactEmail: string | null
   contactPhone: string | null
   country: string | null
@@ -38,7 +39,7 @@ export function InfoTab({ tenant }: { tenant: Tenant }) {
         <form onSubmit={handleSubmit} className="space-y-4 max-w-lg">
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-1.5">
-              <label className="text-sm font-medium text-foreground">Nombre *</label>
+              <label className="text-sm font-medium text-foreground">Nombre del negocio *</label>
               <Input name="name" defaultValue={tenant.name} required />
             </div>
             <div className="space-y-1.5">
@@ -54,6 +55,15 @@ export function InfoTab({ tenant }: { tenant: Tenant }) {
                 <option value="churned">Churned</option>
               </select>
             </div>
+          </div>
+
+          <div className="space-y-1.5">
+            <label className="text-sm font-medium text-foreground">Persona de contacto</label>
+            <Input
+              name="contactName"
+              defaultValue={tenant.contactName ?? ''}
+              placeholder="Nombre completo del contacto"
+            />
           </div>
 
           <div className="grid grid-cols-2 gap-4">

@@ -32,6 +32,11 @@ export function CreateTenantForm() {
         </div>
       </div>
 
+      <div className="space-y-1.5">
+        <label className="text-sm font-medium text-foreground">Persona de contacto</label>
+        <Input name="contactName" placeholder="Nombre completo del contacto" />
+      </div>
+
       <div className="grid grid-cols-2 gap-4">
         <div className="space-y-1.5">
           <label className="text-sm font-medium text-foreground">Email de contacto</label>

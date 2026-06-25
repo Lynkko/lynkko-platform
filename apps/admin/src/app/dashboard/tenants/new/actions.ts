@@ -9,6 +9,7 @@ export async function createTenantAction(formData: FormData): Promise<string | n
 
   const name         = formData.get('name') as string
   const slug         = formData.get('slug') as string
+  const contactName  = formData.get('contactName') as string | null
   const contactEmail = formData.get('contactEmail') as string | null
   const contactPhone = formData.get('contactPhone') as string | null
   const country      = formData.get('country') as string | null
@@ -20,6 +21,7 @@ export async function createTenantAction(formData: FormData): Promise<string | n
   const tenant = await platform.createTenant({
     name:         name.trim(),
     slug:         slug.trim(),
+    contactName:  contactName?.trim()  || undefined,
     contactEmail: contactEmail?.trim() || undefined,
     contactPhone: contactPhone?.trim() || undefined,
     country:      country?.trim()      || undefined,

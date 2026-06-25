@@ -72,6 +72,7 @@ export async function cancelSubscriptionAction(tenantId: string, subscriptionId:
 export async function updateTenantAction(id: string, formData: FormData) {
   await requireSuperadmin()
   const name         = formData.get('name') as string
+  const contactName  = formData.get('contactName') as string | null
   const contactEmail = formData.get('contactEmail') as string | null
   const contactPhone = formData.get('contactPhone') as string | null
   const country      = formData.get('country') as string | null
@@ -80,6 +81,7 @@ export async function updateTenantAction(id: string, formData: FormData) {
 
   await platform.updateTenant(id, {
     name:         name?.trim(),
+    contactName:  contactName?.trim()  || undefined,
     contactEmail: contactEmail?.trim() || undefined,
     contactPhone: contactPhone?.trim() || undefined,
     country:      country?.trim()      || undefined,

@@ -98,6 +98,7 @@ export const tenants = pgTable('tenants', {
   slug:         text('slug').notNull().unique(),
   country:      text('country'),
   timezone:     text('timezone').default('America/Bogota'),
+  contactName:  text('contact_name'),
   contactEmail: text('contact_email'),
   contactPhone: text('contact_phone'),
   logoUrl:      text('logo_url'),
@@ -424,6 +425,7 @@ export interface CreateTenantInput {
   slug:          string
   country?:      string
   timezone?:     string
+  contactName?:  string
   contactEmail?: string
   contactPhone?: string
   logoUrl?:      string
