@@ -18,6 +18,7 @@ type Plan = {
   maxSeats: number | null
   sortOrder: number
   features: string[] | null
+  limits: Record<string, number> | null
   isPublic: boolean
   isActive: boolean
 }
@@ -123,6 +124,17 @@ export function PlanActions({ plan }: { plan: Plan }) {
             rows={3}
             defaultValue={(plan.features ?? []).join('\n')}
             className="w-full px-3 py-2 rounded-md border border-input bg-background text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring resize-none"
+          />
+        </div>
+
+        <div className="space-y-1">
+          <label className="text-xs font-medium text-muted-foreground">Límites (JSON)</label>
+          <textarea
+            name="limits"
+            rows={2}
+            defaultValue={plan.limits ? JSON.stringify(plan.limits, null, 2) : ''}
+            placeholder={'{"max_establishments": 1, "max_advisors": 3}'}
+            className="w-full px-3 py-2 rounded-md border border-input bg-background text-sm font-mono text-foreground focus:outline-none focus:ring-2 focus:ring-ring resize-none"
           />
         </div>
 

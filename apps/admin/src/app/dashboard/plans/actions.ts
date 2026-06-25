@@ -24,6 +24,12 @@ export async function createPlanAction(formData: FormData) {
     ? featuresRaw.split('\n').map((f) => f.trim()).filter(Boolean)
     : undefined
 
+  const limitsRaw = formData.get('limits') as string | null
+  let limits: Record<string, number> | undefined
+  if (limitsRaw?.trim()) {
+    try { limits = JSON.parse(limitsRaw) } catch { /* ignore invalid JSON */ }
+  }
+
   await platform.createPlan({
     appId,
     name:         name.trim(),
@@ -39,6 +45,7 @@ export async function createPlanAction(formData: FormData) {
     features,
     isPublic,
     isActive,
+    limits,
   })
 
   revalidatePath('/dashboard/plans')
@@ -90,6 +97,11 @@ export async function updatePlanAction(planId: string, formData: FormData) {
     data.features = featuresRaw
       ? featuresRaw.split('\n').map((f) => f.trim()).filter(Boolean)
       : []
+  }
+
+  const limitsRaw = formData.get('limits') as string | null
+  if (limitsRaw !== null) {
+    try { (data as Record<string, unknown>).limits = limitsRaw.trim() ? JSON.parse(limitsRaw) : null } catch { /* ignore */ }
   }
 
   data.isPublic = formData.get('isPublic') === 'on'

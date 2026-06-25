@@ -12,6 +12,7 @@ const PUBLIC_PATHS = [
   '/api/invoices',
   '/api/tenants/',
   '/api/plans',
+  '/api/config/',
 ]
 
 export function middleware(req: NextRequest) {

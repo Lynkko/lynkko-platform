@@ -114,6 +114,17 @@ export function NewPlanForm({ apps }: { apps: PlatformApp[] }) {
         />
       </div>
 
+      <div className="space-y-1.5">
+        <label className="text-sm font-medium text-foreground">Límites (JSON)</label>
+        <textarea
+          name="limits"
+          rows={2}
+          placeholder={'{"max_establishments": 1, "max_advisors": 3}'}
+          className="w-full px-3 py-2 rounded-md border border-input bg-background text-sm font-mono text-foreground focus:outline-none focus:ring-2 focus:ring-ring resize-none"
+        />
+        <p className="text-xs text-muted-foreground">Claves de límites aplicables a la app (ej: max_establishments, max_advisors)</p>
+      </div>
+
       <div className="flex items-center gap-4 text-sm">
         <label className="flex items-center gap-2 cursor-pointer">
           <input type="checkbox" name="isPublic" defaultChecked className="rounded" />

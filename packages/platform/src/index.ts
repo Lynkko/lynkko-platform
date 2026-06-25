@@ -42,13 +42,14 @@ export type InvoiceStatus      = 'draft' | 'open' | 'paid' | 'void'
 // ─── Schema ───────────────────────────────────────────────────────────────────
 
 export const platformApps = pgTable('platform_apps', {
-  id:          text('id').primaryKey(),
-  name:        text('name').notNull(),
-  description: text('description'),
-  url:         text('url'),
-  isActive:    boolean('is_active').notNull().default(true),
-  createdAt:   timestamp('created_at').notNull().defaultNow(),
-  updatedAt:   timestamp('updated_at').notNull().defaultNow(),
+  id:                text('id').primaryKey(),
+  name:              text('name').notNull(),
+  description:       text('description'),
+  url:               text('url'),
+  isActive:          boolean('is_active').notNull().default(true),
+  showInMarketplace: boolean('show_in_marketplace').notNull().default(false),
+  createdAt:         timestamp('created_at').notNull().defaultNow(),
+  updatedAt:         timestamp('updated_at').notNull().defaultNow(),
 })
 
 export const platformModules = pgTable('platform_modules', {
@@ -125,6 +126,7 @@ export const appPlans = pgTable('app_plans', {
   currency:     text('currency').notNull().default('COP'),
   maxSeats:     integer('max_seats'),
   features:     jsonb('features').$type<string[]>(),
+  limits:       jsonb('limits').$type<Record<string, number>>(),
   isPublic:     boolean('is_public').notNull().default(true),
   sortOrder:    integer('sort_order').notNull().default(0),
   isActive:     boolean('is_active').notNull().default(true),
@@ -350,6 +352,28 @@ export const paymentMethods = pgTable('payment_methods', {
   index('payment_method_default_idx').on(t.tenantId, t.isDefault),
 ])
 
+// ── Platform settings (clave-valor global) ────────────────────────────────────
+
+export const platformSettings = pgTable('platform_settings', {
+  key:       text('key').primaryKey(),
+  value:     jsonb('value').notNull(),
+  updatedAt: timestamp('updated_at').notNull().defaultNow(),
+})
+
+// ── Marketplace: qué apps se ofrecen en el marketplace de cada app ────────────
+
+export const appMarketplaceOfferings = pgTable('app_marketplace_offerings', {
+  id:          text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
+  hostAppId:   text('host_app_id').notNull().references(() => platformApps.id, { onDelete: 'cascade' }),
+  guestAppId:  text('guest_app_id').notNull().references(() => platformApps.id, { onDelete: 'cascade' }),
+  isEnabled:   boolean('is_enabled').notNull().default(true),
+  sortOrder:   integer('sort_order').notNull().default(0),
+  createdAt:   timestamp('created_at').notNull().defaultNow(),
+  updatedAt:   timestamp('updated_at').notNull().defaultNow(),
+}, (t) => [
+  uniqueIndex('marketplace_offering_idx').on(t.hostAppId, t.guestAppId),
+])
+
 // ── Failed payments ───────────────────────────────────────────────────────────
 
 export const failedPayments = pgTable('failed_payments', {
@@ -373,23 +397,25 @@ export const failedPayments = pgTable('failed_payments', {
 
 // ─── Drizzle inferred types ───────────────────────────────────────────────────
 
-export type PlatformApp        = typeof platformApps.$inferSelect
-export type PlatformModule     = typeof platformModules.$inferSelect
-export type TenantAppAccess    = typeof tenantAppAccess.$inferSelect
-export type TenantModuleAccess = typeof tenantModuleAccess.$inferSelect
-export type Tenant             = typeof tenants.$inferSelect
-export type AppPlan            = typeof appPlans.$inferSelect
-export type Subscription       = typeof subscriptions.$inferSelect
-export type Invoice            = typeof invoices.$inferSelect
-export type InvoiceItem        = typeof invoiceItems.$inferSelect
-export type UsageRecord        = typeof usageRecords.$inferSelect
-export type PlatformApiKey     = typeof platformApiKeys.$inferSelect
-export type WebhookDelivery    = typeof webhookDeliveries.$inferSelect
-export type AuditLog           = typeof auditLogs.$inferSelect
-export type BillingCycle       = typeof billingCycles.$inferSelect
-export type WompiTransaction   = typeof wompiTransactions.$inferSelect
-export type PaymentMethod      = typeof paymentMethods.$inferSelect
-export type FailedPayment      = typeof failedPayments.$inferSelect
+export type PlatformApp              = typeof platformApps.$inferSelect
+export type PlatformModule           = typeof platformModules.$inferSelect
+export type TenantAppAccess          = typeof tenantAppAccess.$inferSelect
+export type TenantModuleAccess       = typeof tenantModuleAccess.$inferSelect
+export type Tenant                   = typeof tenants.$inferSelect
+export type AppPlan                  = typeof appPlans.$inferSelect
+export type Subscription             = typeof subscriptions.$inferSelect
+export type Invoice                  = typeof invoices.$inferSelect
+export type InvoiceItem              = typeof invoiceItems.$inferSelect
+export type UsageRecord              = typeof usageRecords.$inferSelect
+export type PlatformApiKey           = typeof platformApiKeys.$inferSelect
+export type WebhookDelivery          = typeof webhookDeliveries.$inferSelect
+export type AuditLog                 = typeof auditLogs.$inferSelect
+export type BillingCycle             = typeof billingCycles.$inferSelect
+export type WompiTransaction         = typeof wompiTransactions.$inferSelect
+export type PaymentMethod            = typeof paymentMethods.$inferSelect
+export type FailedPayment            = typeof failedPayments.$inferSelect
+export type PlatformSetting          = typeof platformSettings.$inferSelect
+export type AppMarketplaceOffering   = typeof appMarketplaceOfferings.$inferSelect
 
 export const platformSchema = {
   platformApps,
@@ -409,6 +435,8 @@ export const platformSchema = {
   wompiTransactions,
   paymentMethods,
   failedPayments,
+  platformSettings,
+  appMarketplaceOfferings,
 }
 
 // ─── SDK input types ──────────────────────────────────────────────────────────
@@ -446,6 +474,7 @@ export interface CreatePlanInput {
   currency?:     string
   maxSeats?:     number
   features?:     string[]
+  limits?:       Record<string, number>
   isPublic?:     boolean
   sortOrder?:    number
   isActive?:     boolean

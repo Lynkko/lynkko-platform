@@ -1,5 +1,6 @@
 import { db, platformSchema } from '@/lib/db'
-import { Badge, Card } from '@lynkko/ui'
+import { Card } from '@lynkko/ui'
+import { AppToggles } from './AppToggles'
 
 export default async function AppsPage() {
   const apps = await db.select().from(platformSchema.platformApps).orderBy(platformSchema.platformApps.id)
@@ -25,17 +26,13 @@ export default async function AppsPage() {
                   <p className="text-sm font-medium text-foreground">{app.name}</p>
                   <p className="text-xs font-mono text-muted-foreground">{app.id}</p>
                   {app.description && <p className="text-xs text-muted-foreground mt-0.5">{app.description}</p>}
-                </div>
-                <div className="flex items-center gap-3">
                   {app.url && (
                     <a href={app.url} target="_blank" rel="noopener noreferrer" className="text-xs text-primary hover:underline">
                       {app.url}
                     </a>
                   )}
-                  <Badge variant={app.isActive ? 'success' : 'muted'}>
-                    {app.isActive ? 'Activa' : 'Inactiva'}
-                  </Badge>
                 </div>
+                <AppToggles app={{ id: app.id, isActive: app.isActive, showInMarketplace: app.showInMarketplace }} />
               </div>
             ))}
           </div>
