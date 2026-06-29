@@ -2,6 +2,8 @@ import { db, platformSchema } from '@/lib/db'
 import { eq, and } from 'drizzle-orm'
 import { ok, badRequest, notFound, serverError } from '@lynkko/utils'
 import { sendWebhookAsync } from '@/lib/webhooks'
+import { dispatchAudit } from '@/lib/services'
+import { AUDIT_ACTIONS } from '@lynkko/audit'
 import type { NextRequest } from 'next/server'
 
 export async function POST(req: NextRequest) {
@@ -102,6 +104,16 @@ export async function POST(req: NextRequest) {
         period_end: periodEnd.toISOString(),
       })
     }
+
+    // WS-2.4: audit central (best-effort, no bloquea)
+    const planChanged = existing && existing.planId !== plan_id
+    dispatchAudit({
+      tenantId: tenant_id,
+      action:   planChanged ? AUDIT_ACTIONS.SUBSCRIPTION_UPGRADED : AUDIT_ACTIONS.SUBSCRIPTION_CREATED,
+      resource: 'subscription',
+      resourceId: subscription.id,
+      meta: { appId: app_id, planId: plan.id, planName: plan.name, seats: subData.seats },
+    })
 
     return ok({
       subscription: {

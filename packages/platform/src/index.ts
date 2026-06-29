@@ -395,6 +395,21 @@ export const failedPayments = pgTable('failed_payments', {
   index('failed_payment_tenant_idx').on(t.tenantId),
 ])
 
+// ── Service catalog (WS-1: dónde vive cada servicio del ecosistema) ───────────
+
+export const platformServices = pgTable('platform_services', {
+  id:         text('id').primaryKey(),                 // slug: 'comms' | 'notifications' | 'audit' | ...
+  name:       text('name').notNull(),
+  baseUrl:    text('base_url').notNull(),
+  apiKeyHash: text('api_key_hash'),                    // hash de la key con que platform llama al servicio
+  isActive:   boolean('is_active').notNull().default(true),
+  metadata:   jsonb('metadata').$type<Record<string, unknown>>(),
+  createdAt:  timestamp('created_at').notNull().defaultNow(),
+  updatedAt:  timestamp('updated_at').notNull().defaultNow(),
+}, (t) => [
+  index('platform_service_active_idx').on(t.isActive),
+])
+
 // ─── Drizzle inferred types ───────────────────────────────────────────────────
 
 export type PlatformApp              = typeof platformApps.$inferSelect
@@ -416,6 +431,7 @@ export type PaymentMethod            = typeof paymentMethods.$inferSelect
 export type FailedPayment            = typeof failedPayments.$inferSelect
 export type PlatformSetting          = typeof platformSettings.$inferSelect
 export type AppMarketplaceOffering   = typeof appMarketplaceOfferings.$inferSelect
+export type PlatformService          = typeof platformServices.$inferSelect
 
 export const platformSchema = {
   platformApps,
@@ -437,6 +453,7 @@ export const platformSchema = {
   failedPayments,
   platformSettings,
   appMarketplaceOfferings,
+  platformServices,
 }
 
 // ─── SDK input types ──────────────────────────────────────────────────────────
@@ -509,6 +526,24 @@ export interface SubscriptionWithPlan {
   }
 }
 
+/** Payload de licenciamiento que una app cachea localmente (§15 / integración). */
+export interface LicensePayload {
+  subscription: {
+    id:               string
+    status:           string
+    seats:            number
+    currentPeriodEnd: Date
+  } | null
+  plan: {
+    id:       string
+    name:     string
+    slug:     string
+    features: string[]
+    limits:   Record<string, number>
+  } | null
+  activeModules: Record<string, boolean>
+}
+
 export interface MarketplaceItem {
   appId:               LynkkoAppId
   name:                string
@@ -560,6 +595,7 @@ export interface PlatformClient {
 
   // ── Subscriptions ───────────────────────────────────────────────────────────
   getSubscription(tenantId: string, appId: LynkkoAppId): Promise<SubscriptionWithPlan | null>
+  getLicense(tenantId: string, appId: LynkkoAppId): Promise<LicensePayload>
   listSubscriptions(tenantId: string): Promise<SubscriptionWithPlan[]>
   createSubscription(tenantId: string, appId: LynkkoAppId, planId: string, opts?: { seats?: number }): Promise<Subscription>
   cancelSubscription(subscriptionId: string): Promise<void>
@@ -823,6 +859,53 @@ export function createPlatformClient(db: AnyDb): PlatformClient {
       return results[0] ?? null
     },
 
+    async getLicense(tenantId, appId) {
+      // Suscripción + plan
+      const [row] = await db
+        .select({ sub: subscriptions, plan: appPlans })
+        .from(subscriptions)
+        .innerJoin(appPlans, eq(subscriptions.planId, appPlans.id))
+        .where(and(eq(subscriptions.tenantId, tenantId), eq(subscriptions.appId, appId)))
+        .limit(1)
+
+      // Módulos activos del app para este tenant
+      const moduleRows = await db
+        .select({
+          slug:      platformModules.slug,
+          isEnabled: tenantModuleAccess.isEnabled,
+        })
+        .from(platformModules)
+        .leftJoin(tenantModuleAccess, and(
+          eq(tenantModuleAccess.tenantId, tenantId),
+          eq(tenantModuleAccess.moduleId, platformModules.id),
+        ))
+        .where(eq(platformModules.appId, appId))
+
+      const activeModules = Object.fromEntries(
+        (moduleRows as Array<{ slug: string; isEnabled: boolean | null }>)
+          .map((m) => [m.slug, m.isEnabled ?? true]),
+      )
+
+      if (!row) return { subscription: null, plan: null, activeModules }
+
+      return {
+        subscription: {
+          id:               row.sub.id,
+          status:           row.sub.status,
+          seats:            row.sub.seats,
+          currentPeriodEnd: row.sub.currentPeriodEnd,
+        },
+        plan: {
+          id:       row.plan.id,
+          name:     row.plan.name,
+          slug:     row.plan.slug,
+          features: (row.plan.features as string[]) ?? [],
+          limits:   (row.plan.limits as Record<string, number>) ?? {},
+        },
+        activeModules,
+      }
+    },
+
     async listSubscriptions(tenantId) {
       return fetchSubsWithPlan(tenantId)
     },
@@ -1010,3 +1093,70 @@ export function createPlatformClient(db: AnyDb): PlatformClient {
 }
 
 export type PlatformClientInstance = ReturnType<typeof createPlatformClient>
+
+// ─── HTTP client (WS-1) ───────────────────────────────────────────────────────
+//
+// Cliente para apps que consumen platform vía /api/v1 en lugar de acceso directo a
+// la DB. La app solo necesita PLATFORM_API_URL + una API key (atada a su appId).
+// El appId se deriva de la key en el servidor, por eso no se pasa en estos métodos.
+
+export interface PlatformHttpClient {
+  getLicense(tenantId: string): Promise<LicensePayload>
+  getSubscription(tenantId: string): Promise<SubscriptionWithPlan | null>
+  getTenant(tenantId: string): Promise<Tenant | null>
+  listInvoices(tenantId: string): Promise<Invoice[]>
+  getUsageSummary(tenantId: string): Promise<UsageRecord[]>
+  reportUsage(tenantId: string, metrics: Record<string, number>): Promise<void>
+}
+
+export function createPlatformHttpClient(
+  baseUrl: string,
+  apiKey: string,
+): PlatformHttpClient {
+  const root = baseUrl.replace(/\/$/, '')
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  async function call(path: string, init?: RequestInit): Promise<any> {
+    const res = await fetch(`${root}/api/v1${path}`, {
+      ...init,
+      headers: {
+        authorization: `Bearer ${apiKey}`,
+        'content-type': 'application/json',
+        ...(init?.headers ?? {}),
+      },
+    })
+    if (res.status === 404) return null
+    if (!res.ok) {
+      throw new Error(`platform API ${path} → ${res.status} ${await res.text()}`)
+    }
+    return res.json()
+  }
+
+  const q = (tenantId: string) => `?tenant_id=${encodeURIComponent(tenantId)}`
+
+  return {
+    async getLicense(tenantId) {
+      return (await call(`/license${q(tenantId)}`)) as LicensePayload
+    },
+    async getSubscription(tenantId) {
+      return (await call(`/subscription${q(tenantId)}`)) as SubscriptionWithPlan | null
+    },
+    async getTenant(tenantId) {
+      return (await call(`/tenants/${encodeURIComponent(tenantId)}`)) as Tenant | null
+    },
+    async listInvoices(tenantId) {
+      const r = await call(`/invoices${q(tenantId)}`)
+      return (r?.invoices ?? []) as Invoice[]
+    },
+    async getUsageSummary(tenantId) {
+      const r = await call(`/usage${q(tenantId)}`)
+      return (r?.usage ?? []) as UsageRecord[]
+    },
+    async reportUsage(tenantId, metrics) {
+      await call(`/usage${q(tenantId)}`, {
+        method: 'POST',
+        body: JSON.stringify({ metrics }),
+      })
+    },
+  }
+}

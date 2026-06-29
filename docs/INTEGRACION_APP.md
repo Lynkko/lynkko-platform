@@ -71,7 +71,7 @@ ON CONFLICT DO NOTHING;
 
 ### 1.4 Crear planes desde el admin
 
-Ir a `lynkko-platform-admin.vercel.app` → **Planes** → Nuevo Plan.
+Ir a `platform.lynkko.co` → **Planes** → Nuevo Plan.
 
 Campos clave:
 - **Aplicación**: seleccionar el app ID recién registrado
@@ -105,6 +105,45 @@ CRON_SECRET=cron_secret_xxx                         # para proteger el endpoint 
 > **Nunca** reusar `PLATFORM_DATABASE_URL` como `DATABASE_URL` de la app — son DBs distintas.
 
 ### 2.3 Cliente de platform (lectura)
+
+Hay **dos modos**. Para apps nuevas, **preferir el modo HTTP** (WS-1): no necesita
+`PLATFORM_DATABASE_URL` ni acceso directo a la DB de platform — solo una API key.
+
+#### Modo HTTP — recomendado (WS-1)
+
+```typescript
+// src/lib/platform.ts
+import { createPlatformHttpClient } from '@lynkko/platform'
+
+export const platform = createPlatformHttpClient(
+  process.env.PLATFORM_API_URL!,   // https://platform.lynkko.co
+  process.env.PLATFORM_API_KEY!,   // key atada al appId en platform_api_keys
+)
+
+// El appId se deriva de la API key en el servidor, por eso no se pasa:
+//   const license = await platform.getLicense(tenantId)   // sub + plan + módulos
+//   const sub     = await platform.getSubscription(tenantId)
+//   await platform.reportUsage(tenantId, { active_users: 4, records: 312 })
+```
+
+Endpoints expuestos (`/api/v1`, auth `Authorization: Bearer <PLATFORM_API_KEY>`):
+
+| Método | Ruta | SDK |
+|--------|------|-----|
+| GET | `/api/v1/license?tenant_id=` | `getLicense(tenantId)` — sub + plan (features/limits) + módulos |
+| GET | `/api/v1/subscription?tenant_id=` | `getSubscription(tenantId)` |
+| GET | `/api/v1/tenants/:tenantId` | `getTenant(tenantId)` |
+| GET | `/api/v1/invoices?tenant_id=` | `listInvoices(tenantId)` |
+| GET | `/api/v1/usage?tenant_id=` | `getUsageSummary(tenantId)` |
+| POST | `/api/v1/usage?tenant_id=` | `reportUsage(tenantId, metrics)` |
+
+> Requiere una fila en `platform_api_keys` con `app_id = '<tu-app>'`. Crear desde el
+> admin (sección API Keys) o con `createApiKeyRecord('<tu-app>', ...)`.
+
+#### Modo DB directo — legacy
+
+Solo si la app necesita operaciones que aún no expone la API HTTP. Acopla la app a la
+DB de platform; migrar al modo HTTP cuando sea posible.
 
 ```typescript
 // src/lib/platform.ts
@@ -536,7 +575,7 @@ export async function linkBrandToPlatform(
 | Recurso | Valor |
 |---------|-------|
 | Platform DB (unpooled) | `ep-flat-tree-atgxjs64.c-9.us-east-1.aws.neon.tech` |
-| Platform admin URL | `lynkko-platform-admin.vercel.app` |
+| Platform admin + API URL | `platform.lynkko.co` |
 | Admin superadmin | `admin@lynkko.co` |
 | App IDs válidos | `pec`, `turnflow`, `clubpass`, `incentivos`, `pqrs`, `help` |
 | Package registry | `https://npm.pkg.github.com` (`@lynkko` scope) |
