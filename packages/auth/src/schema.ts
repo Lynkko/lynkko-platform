@@ -62,3 +62,21 @@ export const verification = pgTable('verification', {
 
 /** Spread en el schema de tu app para incluir las tablas de auth. */
 export const authSchema = { user, session, account, verification }
+
+// ─── Membresías (WS-4) ───────────────────────────────────────────────────────
+// Modela la autorización: una identidad global (user) puede pertenecer a varias
+// apps/tenants con un rol distinto en cada una. La AUTENTICACIÓN es central (user);
+// la AUTORIZACIÓN es por membresía. Solo el host central de identidad incluye
+// esta tabla — las apps consumen las membresías por API, no la replican.
+export const membership = pgTable('membership', {
+  id:        text('id').primaryKey(),
+  userId:    text('user_id').notNull().references(() => user.id, { onDelete: 'cascade' }),
+  appId:     text('app_id').notNull(),     // 'turnflow' | 'pec' | ...
+  tenantId:  text('tenant_id').notNull(),  // tenant dentro de esa app
+  role:      text('role').notNull().default('member'),
+  createdAt: timestamp('created_at').notNull().defaultNow(),
+  updatedAt: timestamp('updated_at').notNull().defaultNow(),
+})
+
+/** Spread SOLO en el host central de identidad (lynkko-auth), no en cada app. */
+export const membershipSchema = { membership }

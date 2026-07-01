@@ -177,12 +177,20 @@ export const invoices = pgTable('invoices', {
   periodEnd:          timestamp('period_end'),
   wompiTransactionId: text('wompi_transaction_id'),
   wompiPaymentMethod: jsonb('wompi_payment_method'),
+  // WS-5.1 — per-app vs consolidada: app_id seteado = factura de una sola app;
+  // null = factura CONSOLIDADA (ítems de varias apps del mismo tenant).
+  appId:              text('app_id').references(() => platformApps.id),
+  // WS-5.3 — gancho a lynkko-facturación (DIAN, diferido): referencia a la factura
+  // legal emitida por el servicio de facturación y su estado. Null hasta integrar.
+  legalInvoiceId:     text('legal_invoice_id'),
+  legalStatus:        text('legal_status'), // null | 'pending' | 'issued' | 'error'
   notes:              text('notes'),
   createdAt:          timestamp('created_at').notNull().defaultNow(),
   updatedAt:          timestamp('updated_at').notNull().defaultNow(),
 }, (t) => [
   index('invoice_tenant_idx').on(t.tenantId),
   index('invoice_status_idx').on(t.status),
+  index('invoice_app_idx').on(t.appId),
 ])
 
 export const invoiceItems = pgTable('invoice_items', {
