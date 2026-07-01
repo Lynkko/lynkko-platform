@@ -5,7 +5,7 @@ import * as authTables from './schema'
 // ─── Re-exports ──────────────────────────────────────────────────────────────
 
 export { toNextJsHandler } from 'better-auth/next-js'
-export { authSchema, user, session, account, verification } from './schema'
+export { authSchema, user, session, account, verification, membership, membershipSchema } from './schema'
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -58,6 +58,13 @@ export interface LynkkoAuthConfig {
 
   /** URLs adicionales que pueden hacer requests a la API de auth. */
   trustedOrigins?: string[]
+
+  /**
+   * Habilita cookies de sesión compartidas entre subdominios (SSO del ecosistema).
+   * Ej: { domain: '.lynkko.co' } → la sesión creada en auth.lynkko.co es válida
+   * en turnflow.lynkko.co, pec.lynkko.co, etc. Solo lo usa el host central.
+   */
+  crossSubDomainCookies?: { domain: string }
 }
 
 // ─── Factory ─────────────────────────────────────────────────────────────────
@@ -105,6 +112,15 @@ export function createAuth(config: LynkkoAuthConfig) {
     appName: config.appName ?? 'Lynkko',
 
     trustedOrigins: config.trustedOrigins ?? [baseUrl],
+
+    ...(config.crossSubDomainCookies && {
+      advanced: {
+        crossSubDomainCookies: {
+          enabled: true,
+          domain: config.crossSubDomainCookies.domain,
+        },
+      },
+    }),
 
     session: {
       expiresIn: config.session?.expiresIn ?? 60 * 60 * 24 * 30, // 30 días
