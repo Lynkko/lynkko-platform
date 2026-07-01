@@ -302,3 +302,59 @@ export const NOTIFICATION_TYPES = {
 } as const
 
 export type NotificationType = typeof NOTIFICATION_TYPES[keyof typeof NOTIFICATION_TYPES]
+
+// ─── HTTP client (WS-2: consumir el servicio lynkko-notifications) ────────────
+//
+// Mismas firmas que NotificationService, pero contra el servicio HTTP en vez de
+// una DB local. La app solo necesita NOTIFICATIONS_URL + NOTIFICATIONS_API_KEY.
+
+export function createNotificationsHttpClient(
+  baseUrl: string,
+  apiKey: string,
+): NotificationService {
+  const root = baseUrl.replace(/\/$/, '')
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  async function call(path: string, init?: RequestInit): Promise<any> {
+    const res = await fetch(`${root}/api${path}`, {
+      ...init,
+      headers: {
+        authorization: `Bearer ${apiKey}`,
+        'content-type': 'application/json',
+        ...(init?.headers ?? {}),
+      },
+    })
+    if (!res.ok) throw new Error(`notifications API ${path} → ${res.status} ${await res.text()}`)
+    return res.status === 204 ? null : res.json()
+  }
+
+  const qs = (params: Record<string, string | number | boolean | undefined>) =>
+    '?' + Object.entries(params)
+      .filter(([, v]) => v !== undefined)
+      .map(([k, v]) => `${k}=${encodeURIComponent(String(v))}`)
+      .join('&')
+
+  return {
+    async create(input) {
+      return (await call('/notifications', { method: 'POST', body: JSON.stringify(input) })) as Notification
+    },
+    async markRead(id, userId) {
+      await call(`/notifications/${encodeURIComponent(id)}/read`, { method: 'POST', body: JSON.stringify({ userId }) })
+    },
+    async markAllRead(userId, tenantId) {
+      await call('/notifications/read-all', { method: 'POST', body: JSON.stringify({ userId, tenantId }) })
+    },
+    async get(userId, tenantId, options) {
+      const r = await call('/notifications' + qs({ userId, tenantId, ...options }))
+      return (r?.items ?? []) as Notification[]
+    },
+    async countUnread(userId, tenantId) {
+      const r = await call('/notifications/unread-count' + qs({ userId, tenantId }))
+      return (r?.count ?? 0) as number
+    },
+    async purge(olderThan) {
+      const r = await call('/notifications/purge', { method: 'POST', body: JSON.stringify({ olderThan: olderThan.toISOString() }) })
+      return (r?.deleted ?? 0) as number
+    },
+  }
+}

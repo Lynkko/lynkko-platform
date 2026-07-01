@@ -214,3 +214,52 @@ export const AUDIT_ACTIONS = {
 } as const
 
 export type AuditAction = typeof AUDIT_ACTIONS[keyof typeof AUDIT_ACTIONS]
+
+// ─── HTTP client (WS-2: consumir el servicio lynkko-audit) ────────────────────
+//
+// Mismas firmas que AuditLogger, contra el servicio HTTP. La app solo necesita
+// AUDIT_URL + AUDIT_API_KEY.
+
+export function createAuditHttpClient(
+  baseUrl: string,
+  apiKey: string,
+): AuditLogger {
+  const root = baseUrl.replace(/\/$/, '')
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  async function call(path: string, init?: RequestInit): Promise<any> {
+    const res = await fetch(`${root}/api${path}`, {
+      ...init,
+      headers: {
+        authorization: `Bearer ${apiKey}`,
+        'content-type': 'application/json',
+        ...(init?.headers ?? {}),
+      },
+    })
+    if (!res.ok) throw new Error(`audit API ${path} → ${res.status} ${await res.text()}`)
+    return res.status === 204 ? null : res.json()
+  }
+
+  return {
+    async log(entry) {
+      return (await call('/audit', { method: 'POST', body: JSON.stringify(entry) })) as AuditLog
+    },
+    async query(filters) {
+      const params = {
+        ...filters,
+        from: filters.from instanceof Date ? filters.from.toISOString() : filters.from,
+        to:   filters.to   instanceof Date ? filters.to.toISOString()   : filters.to,
+      }
+      const search = '?' + Object.entries(params)
+        .filter(([, v]) => v !== undefined)
+        .map(([k, v]) => `${k}=${encodeURIComponent(String(v))}`)
+        .join('&')
+      const r = await call('/audit' + search)
+      return (r?.items ?? []) as AuditLog[]
+    },
+    async purge(olderThan) {
+      const r = await call('/audit/purge', { method: 'POST', body: JSON.stringify({ olderThan: olderThan.toISOString() }) })
+      return (r?.deleted ?? 0) as number
+    },
+  }
+}

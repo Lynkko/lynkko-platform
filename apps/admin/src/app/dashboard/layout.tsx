@@ -1,6 +1,11 @@
 import { requireSuperadmin } from '@/lib/session'
 import { Sidebar } from '@/components/Sidebar'
 
+// Todo el dashboard es auth-gated (requireSuperadmin lee la sesión de la request)
+// y consulta la DB en render → nunca debe prerenderizarse en build. Esto evita que
+// `next build` toque la DB (falla en previews sin PLATFORM_DATABASE_URL).
+export const dynamic = 'force-dynamic'
+
 export default async function DashboardLayout({ children }: { children: React.ReactNode }) {
   await requireSuperadmin()
 

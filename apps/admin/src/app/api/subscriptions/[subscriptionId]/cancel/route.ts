@@ -2,6 +2,8 @@ import { db, platformSchema } from '@/lib/db'
 import { eq } from 'drizzle-orm'
 import { ok, badRequest, notFound, serverError } from '@lynkko/utils'
 import { sendWebhookAsync } from '@/lib/webhooks'
+import { dispatchAudit } from '@/lib/services'
+import { AUDIT_ACTIONS } from '@lynkko/audit'
 import type { NextRequest } from 'next/server'
 
 interface Params {
@@ -66,6 +68,15 @@ export async function POST(req: NextRequest, { params }: Params) {
         slug: plan.slug,
       },
       period_end: subscription.currentPeriodEnd.toISOString(),
+    })
+
+    // WS-2.4: audit central (best-effort, no bloquea)
+    dispatchAudit({
+      tenantId: subscription.tenantId,
+      action:   AUDIT_ACTIONS.SUBSCRIPTION_CANCELLED,
+      resource: 'subscription',
+      resourceId: subscription.id,
+      meta: { appId: subscription.appId, reason: reason ?? null, immediate: !!immediate },
     })
 
     return ok({

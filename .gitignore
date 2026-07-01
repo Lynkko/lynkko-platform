@@ -8,3 +8,4 @@ dist/
 .next/
 .DS_Store
 next-env.d.ts
+.env.services.local
