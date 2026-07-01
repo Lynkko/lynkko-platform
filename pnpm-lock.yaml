@@ -162,6 +162,49 @@ importers:
         specifier: ^5.7.2
         version: 5.9.3
 
+  apps/comms:
+    dependencies:
+      '@lynkko/comms':
+        specifier: workspace:*
+        version: link:../../packages/comms
+      '@lynkko/db':
+        specifier: workspace:*
+        version: link:../../packages/db
+      '@lynkko/email':
+        specifier: workspace:*
+        version: link:../../packages/email
+      '@lynkko/push':
+        specifier: workspace:*
+        version: link:../../packages/push
+      '@lynkko/utils':
+        specifier: workspace:*
+        version: link:../../packages/utils
+      drizzle-orm:
+        specifier: ^0.45.2
+        version: 0.45.2(@neondatabase/serverless@0.10.4)(@opentelemetry/api@1.9.0)(@types/pg@8.11.6)(kysely@0.29.2)
+      next:
+        specifier: ^15.3.3
+        version: 15.5.19(@opentelemetry/api@1.9.0)(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
+      react:
+        specifier: ^19.0.0
+        version: 19.2.7
+      react-dom:
+        specifier: ^19.0.0
+        version: 19.2.7(react@19.2.7)
+    devDependencies:
+      '@types/node':
+        specifier: ^22.0.0
+        version: 22.19.21
+      '@types/react':
+        specifier: ^19.0.0
+        version: 19.2.17
+      '@types/react-dom':
+        specifier: ^19.0.0
+        version: 19.2.3(@types/react@19.2.17)
+      typescript:
+        specifier: ^5.7.2
+        version: 5.9.3
+
   apps/notifications:
     dependencies:
       '@lynkko/db':
@@ -272,6 +315,21 @@ importers:
       '@types/node':
         specifier: ^22.0.0
         version: 22.19.21
+      tsup:
+        specifier: ^8.3.5
+        version: 8.5.1(jiti@2.7.0)(postcss@8.5.15)(typescript@5.9.3)
+      typescript:
+        specifier: ^5.7.2
+        version: 5.9.3
+
+  packages/comms:
+    devDependencies:
+      '@types/node':
+        specifier: ^22.0.0
+        version: 22.19.21
+      drizzle-orm:
+        specifier: ^0.45.2
+        version: 0.45.2(@neondatabase/serverless@0.10.4)(@opentelemetry/api@1.9.0)(@types/pg@8.11.6)(kysely@0.29.2)
       tsup:
         specifier: ^8.3.5
         version: 8.5.1(jiti@2.7.0)(postcss@8.5.15)(typescript@5.9.3)
