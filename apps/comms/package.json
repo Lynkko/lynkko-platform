@@ -1,0 +1,28 @@
+{
+  "name": "@lynkko/comms-service",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev --port 3040",
+    "build": "next build",
+    "start": "next start --port 3040",
+    "type-check": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@lynkko/comms": "workspace:*",
+    "@lynkko/db": "workspace:*",
+    "@lynkko/email": "workspace:*",
+    "@lynkko/push": "workspace:*",
+    "@lynkko/utils": "workspace:*",
+    "drizzle-orm": "^0.45.2",
+    "next": "^15.3.3",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "@types/react": "^19.0.0",
+    "@types/react-dom": "^19.0.0",
+    "typescript": "^5.7.2"
+  }
+}

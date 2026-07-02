@@ -16,7 +16,14 @@
     "NOTIFICATIONS_URL",
     "AUDIT_DATABASE_URL",
     "AUDIT_API_KEY",
-    "AUDIT_URL"
+    "AUDIT_URL",
+    "COMMS_DATABASE_URL",
+    "COMMS_API_KEY",
+    "COMMS_URL",
+    "RESEND_FROM_EMAIL",
+    "NEXT_PUBLIC_VAPID_PUBLIC_KEY",
+    "VAPID_PRIVATE_KEY",
+    "VAPID_SUBJECT"
   ],
   "tasks": {
     "build": {
