@@ -5,8 +5,19 @@ type DbInstance = ReturnType<typeof createDb<typeof commsSchema>>
 
 let _db: DbInstance | null = null
 
+function createCommsDb(): DbInstance {
+  const databaseUrl = process.env.COMMS_DATABASE_URL
+  if (!databaseUrl) {
+    throw new Error(
+      '[@lynkko/comms-service] COMMS_DATABASE_URL no está definida. ' +
+      'Configura la base de datos propia del servicio Comms.',
+    )
+  }
+  return createDb(commsSchema, databaseUrl)
+}
+
 function getDb(): DbInstance {
-  if (!_db) _db = createDb(commsSchema, process.env.COMMS_DATABASE_URL)
+  if (!_db) _db = createCommsDb()
   return _db
 }
 

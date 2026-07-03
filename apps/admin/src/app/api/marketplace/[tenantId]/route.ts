@@ -33,7 +33,7 @@ interface MarketplaceApp {
  * Marketplace centralizado: obtiene todas las apps y módulos disponibles para un tenant
  * Cada aplicación (Turnflow, PEC, etc.) consulta este endpoint para mostrar el marketplace
  */
-export async function GET(req: NextRequest, { params }: Params) {
+export async function GET(_req: NextRequest, { params }: Params) {
   try {
     const { tenantId } = await params
 

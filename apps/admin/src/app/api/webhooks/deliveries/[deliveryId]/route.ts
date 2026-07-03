@@ -11,7 +11,7 @@ interface Params {
  * GET /api/webhooks/deliveries/{deliveryId}
  * Get detailed webhook delivery information
  */
-export async function GET(req: NextRequest, { params }: Params) {
+export async function GET(_req: NextRequest, { params }: Params) {
   try {
     const { deliveryId } = await params
 

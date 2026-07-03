@@ -12,7 +12,7 @@ interface Params {
  * POST /api/api-keys/{keyId}/revoke
  * Revoke an API key (deactivate it)
  */
-export async function POST(req: NextRequest, { params }: Params) {
+export async function POST(_req: NextRequest, { params }: Params) {
   try {
     const { keyId } = await params
 

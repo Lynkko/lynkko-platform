@@ -7,7 +7,13 @@
     "dev": "turbo dev",
     "lint": "turbo lint",
     "type-check": "turbo type-check",
-    "clean": "turbo clean && rm -rf node_modules"
+    "clean": "turbo clean && rm -rf node_modules",
+    "certification:env": "node scripts/certification/check-env.mjs",
+    "certification:env:platform": "node scripts/certification/check-env.mjs platform",
+    "certification:env:services": "node scripts/certification/check-env.mjs audit notifications auth comms certification",
+    "certification:exports": "pnpm --filter @lynkko/platform build && pnpm --filter @lynkko/audit build && pnpm --filter @lynkko/notifications build && pnpm --filter @lynkko/auth build && pnpm --filter @lynkko/comms build && node scripts/certification/assert-package-exports.mjs",
+    "certification:smoke:platform": "node scripts/certification/smoke-platform-v1.mjs",
+    "certification:smoke:services": "node scripts/certification/smoke-services.mjs"
   },
   "devDependencies": {
     "@types/node": "^22.0.0",

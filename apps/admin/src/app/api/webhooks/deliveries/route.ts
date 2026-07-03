@@ -1,6 +1,6 @@
 import { db, platformSchema } from '@/lib/db'
 import { eq, and, desc } from 'drizzle-orm'
-import { ok, badRequest, serverError } from '@lynkko/utils'
+import { ok, serverError } from '@lynkko/utils'
 import type { NextRequest } from 'next/server'
 
 /**

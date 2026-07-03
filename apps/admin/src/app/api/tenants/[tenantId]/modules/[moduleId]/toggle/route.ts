@@ -1,6 +1,6 @@
 import { db, platformSchema } from '@/lib/db'
-import { eq, and } from 'drizzle-orm'
-import { ok, badRequest, notFound, serverError, unauthorized } from '@lynkko/utils'
+import { eq } from 'drizzle-orm'
+import { ok, badRequest, notFound, serverError } from '@lynkko/utils'
 import { sendWebhookAsync } from '@/lib/webhooks'
 import type { NextRequest } from 'next/server'
 

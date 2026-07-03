@@ -3,7 +3,7 @@
 import { useTransition } from 'react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, Badge } from '@lynkko/ui'
 import { toggleModuleAction } from './modules-actions'
-import type { PlatformModule, TenantModuleAccess } from '@lynkko/platform'
+import type { TenantModuleAccess } from '@lynkko/platform'
 
 interface Props {
   tenantId: string
@@ -18,7 +18,7 @@ interface Props {
   accesses: TenantModuleAccess[]
 }
 
-export function ModulesTab({ tenantId, appId, appName, modules, accesses }: Props) {
+export function ModulesTab({ tenantId, appName, modules, accesses }: Props) {
   const [isPending, startTransition] = useTransition()
 
   const accessMap = Object.fromEntries(accesses.map((a) => [a.moduleId, a]))

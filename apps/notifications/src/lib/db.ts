@@ -5,10 +5,20 @@ type NotifService = ReturnType<typeof createNotificationService>
 
 let _notif: NotifService | null = null
 
+function createNotificationsDb() {
+  const databaseUrl = process.env.NOTIFICATIONS_DATABASE_URL
+  if (!databaseUrl) {
+    throw new Error(
+      '[@lynkko/notifications-service] NOTIFICATIONS_DATABASE_URL no está definida. ' +
+      'Configura la base de datos propia del servicio Notifications.',
+    )
+  }
+  return createDb({ notifications }, databaseUrl)
+}
+
 function getNotif(): NotifService {
   if (!_notif) {
-    const db = createDb({ notifications }, process.env.NOTIFICATIONS_DATABASE_URL)
-    _notif = createNotificationService(db)
+    _notif = createNotificationService(createNotificationsDb())
   }
   return _notif
 }
