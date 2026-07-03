@@ -12,6 +12,7 @@
   "dependencies": {
     "@lynkko/audit": "workspace:*",
     "@lynkko/auth": "workspace:*",
+    "@lynkko/comms": "workspace:*",
     "@lynkko/db": "workspace:*",
     "@lynkko/email": "workspace:*",
     "@lynkko/notifications": "workspace:*",
@@ -29,6 +30,7 @@
     "@types/node": "^22.0.0",
     "@types/react": "^19.0.0",
     "@types/react-dom": "^19.0.0",
+    "drizzle-kit": "^0.31.1",
     "tailwindcss": "^4.0.0",
     "typescript": "^5.7.2"
   }

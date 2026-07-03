@@ -3,14 +3,6 @@ import { eq, and } from 'drizzle-orm'
 import { ok, badRequest, notFound, serverError } from '@lynkko/utils'
 import type { NextRequest } from 'next/server'
 
-interface InvoiceItem {
-  app_id?: string
-  subscription_id?: string
-  description: string
-  quantity?: number
-  unit_price: number
-}
-
 /**
  * POST /api/invoices
  * Create an invoice for a tenant

@@ -11,7 +11,7 @@ interface Params {
  * GET /api/plans/{planId}
  * Get a specific plan
  */
-export async function GET(req: NextRequest, { params }: Params) {
+export async function GET(_req: NextRequest, { params }: Params) {
   try {
     const { planId } = await params
 
@@ -127,7 +127,7 @@ export async function PUT(req: NextRequest, { params }: Params) {
  * DELETE /api/plans/{planId}
  * Delete a plan (soft delete if subscriptions exist, otherwise hard delete)
  */
-export async function DELETE(req: NextRequest, { params }: Params) {
+export async function DELETE(_req: NextRequest, { params }: Params) {
   try {
     const { planId } = await params
 

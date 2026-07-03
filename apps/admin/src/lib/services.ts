@@ -2,6 +2,7 @@ import { eq } from 'drizzle-orm'
 import { db, platformSchema } from './db'
 import { createAuditHttpClient, type AuditEntry } from '@lynkko/audit'
 import { createNotificationsHttpClient, type CreateNotificationInput } from '@lynkko/notifications'
+import { createCommsHttpClient, type SendEmailInput, type SendPushInput } from '@lynkko/comms'
 
 /**
  * WS-2.4 — dispatcher de platform hacia los servicios del ecosistema.
@@ -39,6 +40,13 @@ export async function getNotificationsClient() {
   return createNotificationsHttpClient(baseUrl, key)
 }
 
+export async function getCommsClient() {
+  const baseUrl = await resolveBaseUrl('comms', process.env.COMMS_URL)
+  const key = process.env.COMMS_API_KEY
+  if (!baseUrl || !key) return null
+  return createCommsHttpClient(baseUrl, key)
+}
+
 /** Registra un evento en el servicio central de audit. Fire-and-forget. */
 export function dispatchAudit(entry: AuditEntry): void {
   void (async () => {
@@ -61,6 +69,32 @@ export function dispatchNotification(input: CreateNotificationInput): void {
       await notif.create(input)
     } catch (error) {
       console.error('[services.dispatchNotification]', error)
+    }
+  })()
+}
+
+/** Envía email transaccional vía el servicio central de comms. Fire-and-forget. */
+export function dispatchEmail(input: SendEmailInput): void {
+  void (async () => {
+    try {
+      const comms = await getCommsClient()
+      if (!comms) return
+      await comms.sendEmail(input)
+    } catch (error) {
+      console.error('[services.dispatchEmail]', error)
+    }
+  })()
+}
+
+/** Envía push vía el servicio central de comms. Fire-and-forget. */
+export function dispatchPush(input: SendPushInput): void {
+  void (async () => {
+    try {
+      const comms = await getCommsClient()
+      if (!comms) return
+      await comms.sendPush(input)
+    } catch (error) {
+      console.error('[services.dispatchPush]', error)
     }
   })()
 }

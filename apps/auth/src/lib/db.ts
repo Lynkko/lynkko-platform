@@ -7,8 +7,19 @@ type DbInstance = ReturnType<typeof createDb<typeof schema>>
 
 let _db: DbInstance | null = null
 
+function createAuthDb(): DbInstance {
+  const databaseUrl = process.env.AUTH_DATABASE_URL
+  if (!databaseUrl) {
+    throw new Error(
+      '[@lynkko/auth-service] AUTH_DATABASE_URL no está definida. ' +
+      'Configura la base de datos propia del servicio Auth.',
+    )
+  }
+  return createDb(schema, databaseUrl)
+}
+
 function getDb(): DbInstance {
-  if (!_db) _db = createDb(schema, process.env.AUTH_DATABASE_URL)
+  if (!_db) _db = createAuthDb()
   return _db
 }
 

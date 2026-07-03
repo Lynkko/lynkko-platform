@@ -3,6 +3,7 @@
   "globalEnv": [
     "PLATFORM_DATABASE_URL",
     "AUTH_SECRET",
+    "AUTH_URL",
     "NEXT_PUBLIC_APP_URL",
     "RESEND_API_KEY",
     "AUTH_DATABASE_URL",

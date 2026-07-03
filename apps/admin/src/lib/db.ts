@@ -8,8 +8,19 @@ type DbInstance = ReturnType<typeof createDb<typeof schema>>
 
 let _db: DbInstance | null = null
 
+function createPlatformDb(): DbInstance {
+  const databaseUrl = process.env.PLATFORM_DATABASE_URL
+  if (!databaseUrl) {
+    throw new Error(
+      '[@lynkko/admin] PLATFORM_DATABASE_URL no está definida. ' +
+      'Configura la base de datos de Platform antes de usar el admin.',
+    )
+  }
+  return createDb(schema, databaseUrl)
+}
+
 function getDb(): DbInstance {
-  if (!_db) _db = createDb(schema, process.env.PLATFORM_DATABASE_URL)
+  if (!_db) _db = createPlatformDb()
   return _db
 }
 

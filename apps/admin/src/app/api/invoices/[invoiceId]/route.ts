@@ -11,7 +11,7 @@ interface Params {
  * GET /api/invoices/{invoiceId}
  * Get a specific invoice with line items
  */
-export async function GET(req: NextRequest, { params }: Params) {
+export async function GET(_req: NextRequest, { params }: Params) {
   try {
     const { invoiceId } = await params
 

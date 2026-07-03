@@ -5,10 +5,20 @@ type AuditLogger = ReturnType<typeof createAuditLogger>
 
 let _audit: AuditLogger | null = null
 
+function createAuditDb() {
+  const databaseUrl = process.env.AUDIT_DATABASE_URL
+  if (!databaseUrl) {
+    throw new Error(
+      '[@lynkko/audit-service] AUDIT_DATABASE_URL no está definida. ' +
+      'Configura la base de datos propia del servicio Audit.',
+    )
+  }
+  return createDb({ auditLogs }, databaseUrl)
+}
+
 function getAudit(): AuditLogger {
   if (!_audit) {
-    const db = createDb({ auditLogs }, process.env.AUDIT_DATABASE_URL)
-    _audit = createAuditLogger(db)
+    _audit = createAuditLogger(createAuditDb())
   }
   return _audit
 }
