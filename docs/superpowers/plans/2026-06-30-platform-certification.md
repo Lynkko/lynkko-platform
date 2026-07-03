@@ -1,6 +1,22 @@
 # Lynkko Platform Certification Implementation Plan
 
-> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
+> ⚠️ **DOCUMENTO HISTÓRICO — NO EJECUTAR.**
+>
+> Este es el plan de implementación **original** (2026-06-30) de la certificación de
+> `lynkko-platform`. El trabajo **ya está completo** y la arquitectura evolucionó más
+> allá de este plan. Se conserva **solo como registro histórico**.
+>
+> - **No es un plan activo.** No lo tomes como guía ejecutable. Los checkboxes (`- [ ]`)
+>   de abajo son el estado *de aquel momento*, no tareas pendientes.
+> - **Referencias obsoletas:** la rama/worktree `codex/platform-certification` que
+>   menciona **ya fue borrada**, y las fallas que describe (p. ej. "`pnpm type-check`
+>   falla") **ya están resueltas en `main`**.
+> - **Alcance desactualizado:** este plan solo cubre `audit` y `notifications`. `main`
+>   ya certifica **los cuatro** servicios del ecosistema — `audit`, `notifications`,
+>   **`auth`** (SSO) y **`comms`** — más WS-5 (revenue).
+>
+> **Estado vigente:** `Documentacion Lynkko/ROADMAP_V3.md`, `docs/CERTIFICATION.md`,
+> `docs/CAMBIOS_V3.md`.
 
 **Goal:** Certify `lynkko-platform` as the stable control-plane base for Lynkko products, with published HTTP contracts, operational audit/notifications services, ownership governance, adoption kit, and a Turnflow pilot.
 
@@ -55,36 +71,36 @@ This plan covers one certifiable subsystem: `lynkko-platform` as the platform ba
 
 Create:
 
-- `docs/superpowers/plans/2026-06-30-platform-certification.md`  
+- `docs/superpowers/plans/2026-06-30-platform-certification.md`
   This implementation plan.
-- `docs/CERTIFICATION.md`  
+- `docs/CERTIFICATION.md`
   Operator-facing certification guide and Definition of Done.
-- `docs/GOVERNANCE.md`  
+- `docs/GOVERNANCE.md`
   Ownership map for Platform, services, and products.
-- `docs/ADOPTION_KIT.md`  
+- `docs/ADOPTION_KIT.md`
   Product integration template: adapter, webhook, cron, local cache, environment variables, and smoke tests.
-- `scripts/certification/assert-package-exports.mjs`  
+- `scripts/certification/assert-package-exports.mjs`
   Verifies built package exports include the HTTP clients products need.
-- `scripts/certification/smoke-platform-v1.mjs`  
+- `scripts/certification/smoke-platform-v1.mjs`
   Runs live HTTP smoke tests against `/api/v1`.
-- `scripts/certification/smoke-services.mjs`  
+- `scripts/certification/smoke-services.mjs`
   Runs live health and write/query smoke tests against audit and notifications.
-- `scripts/certification/check-env.mjs`  
+- `scripts/certification/check-env.mjs`
   Verifies required environment variables for Platform, audit, and notifications.
 
 Modify:
 
-- `package.json`  
+- `package.json`
   Add certification scripts.
-- `apps/admin/package.json`  
+- `apps/admin/package.json`
   Declare `drizzle-kit` as an admin dev dependency and add focused certification scripts if useful.
-- `apps/admin/src/app/layout.tsx`  
+- `apps/admin/src/app/layout.tsx`
   Use an explicit React type import compatible with the app package.
-- Admin route/action files reported by `pnpm --filter @lynkko/admin type-check`  
+- Admin route/action files reported by `pnpm --filter @lynkko/admin type-check`
   Remove unused imports and rename unused request parameters to `_req`.
-- `docs/INTEGRACION_APP.md`  
+- `docs/INTEGRACION_APP.md`
   Align with the certified HTTP-first adoption path.
-- `docs/CAMBIOS_V3.md` and `docs/ARCHITECTURE.md`  
+- `docs/CAMBIOS_V3.md` and `docs/ARCHITECTURE.md`
   Link to certification/governance docs and mark Platform + Observability as the current certification target.
 
 Do not modify product repos in this plan.
