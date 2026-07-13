@@ -89,10 +89,14 @@ export async function sendWebhookAsync(event: WebhookEvent, appId: string): Prom
   }
 
   try {
-    const { queueWebhook } = await import('./webhook-queue')
-    await queueWebhook(event.event, event.tenant_id, appId, event, url)
+    const { queueWebhook, deliverWebhook } = await import('./webhook-queue')
+    const record = await queueWebhook(event.event, event.tenant_id, appId, event, url)
+    // Entrega INLINE: el plan Hobby de Vercel no permite crons frecuentes, así que
+    // entregamos en el mismo request que dispara el evento. El cron diario
+    // webhook-retry reintenta las que queden 'pending'/'failed'.
+    if (record?.id) await deliverWebhook(record.id)
   } catch (error) {
-    console.error('Failed to queue webhook:', error)
+    console.error('Failed to queue/deliver webhook:', error)
     // Fallback a entrega directa
     sendWebhook(event, url).catch(err => {
       console.error('Async webhook error:', err)
