@@ -89,21 +89,19 @@ export async function POST(req: NextRequest) {
       modules.map(m => [m.slug, planFeatures.includes(m.slug)])
     )
 
-    // Send webhook to app if subscription was created or plan changed
-    if (app_id === 'turnflow') {
-      const eventType = existing && existing.planId !== plan_id ? 'plan_changed' : 'subscription_activated'
-      sendWebhookAsync({
-        event: eventType,
-        tenant_id,
-        tenant_name:  tenant?.name,
-        tenant_slug:  tenant?.slug,
-        tenant_email: tenant?.contactEmail ?? undefined,
-        subscription_id: subscription.id,
-        plan: { id: plan.id, name: plan.name, slug: plan.slug },
-        active_modules: activeModules,
-        period_end: periodEnd.toISOString(),
-      })
-    }
+    // Send webhook to the tenant's app (URL resuelta desde platform_apps.url)
+    const eventType = existing && existing.planId !== plan_id ? 'plan_changed' : 'subscription_activated'
+    sendWebhookAsync({
+      event: eventType,
+      tenant_id,
+      tenant_name:  tenant?.name,
+      tenant_slug:  tenant?.slug,
+      tenant_email: tenant?.contactEmail ?? undefined,
+      subscription_id: subscription.id,
+      plan: { id: plan.id, name: plan.name, slug: plan.slug },
+      active_modules: activeModules,
+      period_end: periodEnd.toISOString(),
+    }, app_id)
 
     // WS-2.4: audit central (best-effort, no bloquea)
     const planChanged = existing && existing.planId !== plan_id
@@ -125,7 +123,7 @@ export async function POST(req: NextRequest) {
         seats: subscription.seats,
         current_period_end: periodEnd,
       },
-      webhook_sent: app_id === 'turnflow',
+      webhook_sent: true,
     })
   } catch (error) {
     console.error('Subscription creation error:', error)

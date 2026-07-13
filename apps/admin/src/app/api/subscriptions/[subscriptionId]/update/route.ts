@@ -127,7 +127,7 @@ export async function PUT(req: NextRequest, { params }: Params) {
       },
       active_modules: activeModules,
       period_end: subscription.currentPeriodEnd.toISOString(),
-    })
+    }, subscription.appId)
 
     return ok({
       status: 'updated',

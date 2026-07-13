@@ -127,7 +127,7 @@ export async function POST(req: NextRequest, { params }: Params) {
       plan: subscription?.plan,
       active_modules: activeModules,
       period_end: subscription?.period_end,
-    })
+    }, appId)
 
     return ok({
       status: 'ok',

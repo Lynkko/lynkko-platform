@@ -68,7 +68,7 @@ export async function POST(req: NextRequest, { params }: Params) {
         slug: plan.slug,
       },
       period_end: subscription.currentPeriodEnd.toISOString(),
-    })
+    }, subscription.appId)
 
     // WS-2.4: audit central (best-effort, no bloquea)
     dispatchAudit({

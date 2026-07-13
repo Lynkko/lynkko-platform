@@ -34,7 +34,7 @@ export async function addSubscriptionAction(
 
   await platform.enableApp(tenantId, appId)
 
-  if (appId === 'turnflow' && tenant && plan) {
+  if (tenant && plan) {
     const modules = await db
       .select({ slug: platformSchema.platformModules.slug })
       .from(platformSchema.platformModules)
@@ -57,7 +57,7 @@ export async function addSubscriptionAction(
       plan: { id: plan.id, name: plan.name, slug: plan.slug },
       active_modules: activeModules,
       period_end: periodEnd.toISOString(),
-    })
+    }, appId)
   }
 
   revalidatePath(`/dashboard/tenants/${tenantId}`)
