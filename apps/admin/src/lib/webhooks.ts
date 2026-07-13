@@ -1,6 +1,7 @@
 import crypto from 'crypto'
+import { eq } from 'drizzle-orm'
+import { db, platformSchema } from '@/lib/db'
 
-const TURNFLOW_WEBHOOK_URL = process.env.TURNFLOW_WEBHOOK_URL ?? 'https://turnflow.lynkko.co/api/platform/webhook'
 const PLATFORM_WEBHOOK_SECRET = process.env.PLATFORM_WEBHOOK_SECRET!
 
 export interface WebhookEvent {
@@ -22,6 +23,22 @@ export interface WebhookEvent {
   period_end?: string
 }
 
+/**
+ * Resuelve la URL de webhook de CUALQUIER app desde `platform_apps.url`.
+ * Cada app del ecosistema expone `POST /api/platform/webhook`. Devuelve null si la
+ * app no existe o no tiene URL configurada (en cuyo caso se omite el envío).
+ * Esto reemplaza el hardcode a turnflow: platform empuja a la app dueña del tenant.
+ */
+async function resolveWebhookUrl(appId: string): Promise<string | null> {
+  const [app] = await db
+    .select({ url: platformSchema.platformApps.url })
+    .from(platformSchema.platformApps)
+    .where(eq(platformSchema.platformApps.id, appId))
+    .limit(1)
+  if (!app?.url) return null
+  return `${app.url.replace(/\/+$/, '')}/api/platform/webhook`
+}
+
 function signWebhook(payload: string, secret: string): { signature: string; timestamp: string } {
   const timestamp = Math.floor(Date.now() / 1000).toString()
   const message = `${timestamp}.${payload}`
@@ -33,13 +50,12 @@ function signWebhook(payload: string, secret: string): { signature: string; time
   return { signature, timestamp }
 }
 
-export async function sendWebhook(event: WebhookEvent, appUrl?: string): Promise<boolean> {
+export async function sendWebhook(event: WebhookEvent, appUrl: string): Promise<boolean> {
   try {
-    const url = appUrl || TURNFLOW_WEBHOOK_URL
     const payload = JSON.stringify(event)
     const { signature, timestamp } = signWebhook(payload, PLATFORM_WEBHOOK_SECRET)
 
-    const response = await fetch(url, {
+    const response = await fetch(appUrl, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -61,32 +77,24 @@ export async function sendWebhook(event: WebhookEvent, appUrl?: string): Promise
   }
 }
 
-export async function sendWebhookAsync(event: WebhookEvent, appUrl?: string): Promise<void> {
-  // Send webhook asynchronously without awaiting
-  // This prevents webhook delivery from blocking the request
+/**
+ * Encola (con reintentos) un webhook hacia la app dueña del tenant. El `appId`
+ * determina la URL destino vía `platform_apps.url`. Si la app no tiene URL, se omite.
+ */
+export async function sendWebhookAsync(event: WebhookEvent, appId: string): Promise<void> {
+  const url = await resolveWebhookUrl(appId)
+  if (!url) {
+    console.warn(`[webhook] app '${appId}' sin URL en platform_apps; se omite el envío`)
+    return
+  }
 
-  // Option 1: Direct delivery (old way, for backwards compatibility)
-  // sendWebhook(event, appUrl).catch(error => {
-  //   console.error('Async webhook error:', error)
-  // })
-
-  // Option 2: Queue for retry (new way, Phase 3)
   try {
     const { queueWebhook } = await import('./webhook-queue')
-    const url = appUrl || TURNFLOW_WEBHOOK_URL
-    const appId = event.subscription_id ? 'turnflow' : 'unknown'
-
-    await queueWebhook(
-      event.event,
-      event.tenant_id,
-      appId,
-      event,
-      url
-    )
+    await queueWebhook(event.event, event.tenant_id, appId, event, url)
   } catch (error) {
     console.error('Failed to queue webhook:', error)
-    // Fallback to direct delivery
-    sendWebhook(event, appUrl).catch(err => {
+    // Fallback a entrega directa
+    sendWebhook(event, url).catch(err => {
       console.error('Async webhook error:', err)
     })
   }

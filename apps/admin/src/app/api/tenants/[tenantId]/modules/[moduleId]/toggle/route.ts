@@ -52,17 +52,15 @@ export async function POST(req: NextRequest, { params }: Params) {
         set: { isEnabled: enabled },
       })
 
-    // Send webhook to the app if it's a known app
-    if (module.appId === 'turnflow') {
-      const eventType = enabled ? 'module_enabled' : 'module_disabled'
-      sendWebhookAsync({
-        event: eventType as any, // TypeScript issue, but webhook supports it
-        tenant_id: tenantId,
-        module_id: moduleId,
-        module_slug: module.slug,
-        module_name: module.name,
-      })
-    }
+    // Send webhook to the module's app (URL resuelta desde platform_apps.url)
+    const eventType = enabled ? 'module_enabled' : 'module_disabled'
+    sendWebhookAsync({
+      event: eventType as any, // TypeScript issue, but webhook supports it
+      tenant_id: tenantId,
+      module_id: moduleId,
+      module_slug: module.slug,
+      module_name: module.name,
+    }, module.appId)
 
     return ok({
       status: 'ok',
@@ -70,7 +68,7 @@ export async function POST(req: NextRequest, { params }: Params) {
       module_id: moduleId,
       module_slug: module.slug,
       enabled,
-      webhook_sent: module.appId === 'turnflow',
+      webhook_sent: true,
     })
   } catch (error) {
     console.error('Error toggling module:', error)
