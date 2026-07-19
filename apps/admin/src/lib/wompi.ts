@@ -139,32 +139,31 @@ export async function tokenizePaymentMethod(card: {
   cardholderName: string
 }): Promise<{ token: string } | null> {
   try {
-    const response = await fetch(`${WOMPI_API_URL}/tokens`, {
+    // Wompi: POST /v1/tokens/cards con Bearer <public_key> y body plano.
+    const response = await fetch(`${WOMPI_API_URL}/tokens/cards`, {
       method: 'POST',
       headers: {
+        'Authorization': `Bearer ${WOMPI_PUBLIC_KEY}`,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        data: {
-          number: card.cardNumber,
-          exp_month: card.expiryMonth,
-          exp_year: card.expiryYear,
-          cvc: card.cvv,
-          card_holder: card.cardholderName,
-        },
-        public_key: WOMPI_PUBLIC_KEY,
+        number: card.cardNumber,
+        exp_month: card.expiryMonth,
+        exp_year: card.expiryYear,
+        cvc: card.cvv,
+        card_holder: card.cardholderName,
       }),
     })
 
     const data = await response.json()
 
-    if (!response.ok) {
-      console.error('Wompi tokenization error:', data)
+    if (!response.ok || !data.data?.id) {
+      console.error('Wompi tokenization error:', JSON.stringify(data))
       return null
     }
 
     return {
-      token: data.data?.id,
+      token: data.data.id,
     }
   } catch (error) {
     console.error('Wompi tokenization error:', error)
