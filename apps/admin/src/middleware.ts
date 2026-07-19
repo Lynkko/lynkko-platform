@@ -10,6 +10,7 @@ const PUBLIC_PATHS = [
   '/api/marketplace/',
   '/api/cron/',
   '/api/webhooks/',
+  '/api/billing/',
   '/api/invoices',
   '/api/tenants/',
   '/api/plans',
