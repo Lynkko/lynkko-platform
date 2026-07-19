@@ -42,10 +42,26 @@ export interface WompiResponse {
 }
 
 /**
+ * Obtiene el acceptance_token del comercio (Wompi lo exige en cada transacción:
+ * es la aceptación de términos del titular). GET /merchants/{public_key}.
+ */
+export async function getAcceptanceToken(): Promise<string | null> {
+  try {
+    const res = await fetch(`${WOMPI_API_URL}/merchants/${WOMPI_PUBLIC_KEY}`)
+    const data = await res.json()
+    return data?.data?.presigned_acceptance?.acceptance_token ?? null
+  } catch (error) {
+    console.error('Wompi acceptance token error:', error)
+    return null
+  }
+}
+
+/**
  * Process a payment with Wompi
  */
 export async function processPayment(transaction: WompiTransaction): Promise<WompiResponse> {
   try {
+    const acceptanceToken = await getAcceptanceToken()
     const response = await fetch(`${WOMPI_API_URL}/transactions`, {
       method: 'POST',
       headers: {
@@ -53,6 +69,7 @@ export async function processPayment(transaction: WompiTransaction): Promise<Wom
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
+        acceptance_token: acceptanceToken,
         reference: transaction.reference,
         amount_in_cents: transaction.amountInCents,
         currency: transaction.currency,
