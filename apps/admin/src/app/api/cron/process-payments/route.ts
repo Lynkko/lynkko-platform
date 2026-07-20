@@ -1,7 +1,7 @@
 import { db, platformSchema } from '@/lib/db'
 import { eq, and } from 'drizzle-orm'
 import { ok, unauthorized, serverError } from '@lynkko/utils'
-import { processPayment, calculatePaymentAmount } from '@/lib/wompi'
+import { processPayment, getTransactionStatus } from '@/lib/wompi'
 import { logAuditEvent } from '@/lib/audit-log'
 import type { NextRequest } from 'next/server'
 
@@ -76,15 +76,16 @@ export async function GET(req: NextRequest) {
           continue
         }
 
-        // Calculate payment amount with fees
-        const amountInCents = calculatePaymentAmount(invoice.total)
+        // invoice.total está en pesos (COP major units, ya con IVA) → a centavos.
+        // Igual que el portal (page.tsx): amount_in_cents = total * 100.
+        const amountInCents = Math.round(Number(invoice.total) * 100)
 
         // Process payment with Wompi
         const reference = `INV-${invoice.id.slice(0, 8)}-${Date.now()}`
 
         console.log(`💳 Procesando pago ${reference} por $${(amountInCents / 100).toFixed(2)}`)
 
-        const wompiResult = await processPayment({
+        let wompiResult = await processPayment({
           reference,
           amountInCents,
           currency: invoice.currency,
@@ -97,6 +98,19 @@ export async function GET(req: NextRequest) {
             subscriptionId: subscription.id,
           },
         })
+
+        // Las transacciones de Wompi son asíncronas: si vuelve PENDING, consultar
+        // el estado unas veces hasta que resuelva (evita marcar como fallida una que
+        // se aprueba segundos después).
+        const txId = wompiResult.data?.id
+        if (txId && wompiResult.data?.status !== 'APPROVED' && wompiResult.data?.status !== 'DECLINED') {
+          for (let i = 0; i < 5; i++) {
+            await new Promise((r) => setTimeout(r, 3000))
+            const s = await getTransactionStatus(txId)
+            if (s.data?.status) wompiResult = s
+            if (wompiResult.data?.status === 'APPROVED' || wompiResult.data?.status === 'DECLINED') break
+          }
+        }
 
         processed++
 
