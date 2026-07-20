@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from 'next/server'
 // Rutas públicas: login + API externas (autenticadas con Bearer token en el handler)
 const PUBLIC_PATHS = [
   '/login',
+  '/billing',
   '/api/auth',
   '/api/apps/',
   '/api/v1/',
