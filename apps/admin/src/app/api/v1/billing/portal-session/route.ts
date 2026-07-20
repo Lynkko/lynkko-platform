@@ -8,7 +8,7 @@ import { resolveV1Context } from '@/lib/api-v1'
 import { signSession } from '@/lib/billing-portal'
 import type { NextRequest } from 'next/server'
 
-const APP_URL = (process.env.NEXT_PUBLIC_APP_URL ?? 'https://platform.lynkko.co').replace(/\/+$/, '')
+const APP_URL = (process.env.NEXT_PUBLIC_APP_URL ?? 'https://platform.lynkko.co').trim().replace(/\/+$/, '')
 
 export async function POST(req: NextRequest) {
   const resolved = await resolveV1Context(req)

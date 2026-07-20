@@ -12,7 +12,7 @@ import { getTransactionStatus } from '@/lib/wompi'
 
 export const dynamic = 'force-dynamic'
 
-const APP_URL = (process.env.NEXT_PUBLIC_APP_URL ?? 'https://platform.lynkko.co').replace(/\/+$/, '')
+const APP_URL = (process.env.NEXT_PUBLIC_APP_URL ?? 'https://platform.lynkko.co').trim().replace(/\/+$/, '')
 const WOMPI_PUBLIC_KEY = process.env.WOMPI_PUBLIC_KEY ?? ''
 const CHECKOUT_URL = 'https://checkout.wompi.co/p/'
 
