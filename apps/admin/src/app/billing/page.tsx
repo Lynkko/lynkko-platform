@@ -9,11 +9,13 @@ import { db, platformSchema } from '@/lib/db'
 import { and, eq, desc } from 'drizzle-orm'
 import { verifySession, integritySignature } from '@/lib/billing-portal'
 import { getTransactionStatus } from '@/lib/wompi'
+import { SaveCardForm } from './SaveCardForm'
 
 export const dynamic = 'force-dynamic'
 
 const APP_URL = (process.env.NEXT_PUBLIC_APP_URL ?? 'https://platform.lynkko.co').trim().replace(/\/+$/, '')
 const WOMPI_PUBLIC_KEY = process.env.WOMPI_PUBLIC_KEY ?? ''
+const WOMPI_API_URL = (process.env.WOMPI_API_URL ?? 'https://sandbox.wompi.co/v1').replace(/\/+$/, '')
 const CHECKOUT_URL = 'https://checkout.wompi.co/p/'
 
 function Shell({ children }: { children: React.ReactNode }) {
@@ -80,6 +82,15 @@ export default async function BillingPortal({
     .where(and(eq(platformSchema.invoices.tenantId, tenantId), eq(platformSchema.invoices.status, 'open')))
     .orderBy(desc(platformSchema.invoices.createdAt))
 
+  const [savedCard] = await db.select({ brand: platformSchema.paymentMethods.brand, last4: platformSchema.paymentMethods.lastFour })
+    .from(platformSchema.paymentMethods)
+    .where(and(
+      eq(platformSchema.paymentMethods.tenantId, tenantId),
+      eq(platformSchema.paymentMethods.isActive, true),
+      eq(platformSchema.paymentMethods.isDefault, true),
+    ))
+    .limit(1)
+
   const fmt = (n: number, c: string) => new Intl.NumberFormat('es-CO', { style: 'currency', currency: c, maximumFractionDigits: 0 }).format(n)
 
   return (
@@ -141,6 +152,15 @@ export default async function BillingPortal({
           })}
         </div>
       </section>
+
+      {WOMPI_PUBLIC_KEY && sp.session && (
+        <SaveCardForm
+          publicKey={WOMPI_PUBLIC_KEY}
+          wompiBase={WOMPI_API_URL}
+          sessionToken={sp.session}
+          existingCard={savedCard ? { brand: savedCard.brand ?? 'CARD', last4: savedCard.last4 ?? '****' } : null}
+        />
+      )}
 
       <p style={{ marginTop: 28, fontSize: 12, color: '#9aa0b2', textAlign: 'center' }}>Pagos procesados de forma segura por Wompi.</p>
     </Shell>

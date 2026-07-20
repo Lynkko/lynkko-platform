@@ -3,6 +3,14 @@
     {
       "path": "/api/cron/webhook-retry",
       "schedule": "0 3 * * *"
+    },
+    {
+      "path": "/api/cron/generate-invoices",
+      "schedule": "0 2 * * *"
+    },
+    {
+      "path": "/api/cron/process-payments",
+      "schedule": "30 2 * * *"
     }
   ]
 }

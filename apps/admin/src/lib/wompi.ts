@@ -13,12 +13,25 @@ export interface WompiTransaction {
   currency: string
   customerEmail: string
   customerName: string
-  paymentMethod: {
+  /** Pago único con token de tarjeta (un solo uso). */
+  paymentMethod?: {
     type: 'CARD'
     token: string
+    installments?: number
   }
+  /** Cobro recurrente: id de un payment_source reusable (creado con createPaymentSource). */
+  paymentSourceId?: string | number
   redirectUrl?: string
   metadata?: Record<string, any>
+}
+
+export interface WompiPaymentSource {
+  id: string
+  last4: string
+  brand: string
+  expMonth: string
+  expYear: string
+  holder: string
 }
 
 export interface WompiResponse {
@@ -62,6 +75,14 @@ export async function getAcceptanceToken(): Promise<string | null> {
 export async function processPayment(transaction: WompiTransaction): Promise<WompiResponse> {
   try {
     const acceptanceToken = await getAcceptanceToken()
+    // Cobro recurrente (payment_source_id) vs pago único (token de tarjeta).
+    // Con payment_source_id, Wompi exige payment_method con installments.
+    const paymentBody = transaction.paymentSourceId
+      ? {
+          payment_source_id: Number(transaction.paymentSourceId),
+          payment_method: { installments: transaction.paymentMethod?.installments ?? 1 },
+        }
+      : { payment_method: transaction.paymentMethod }
     const response = await fetch(`${WOMPI_API_URL}/transactions`, {
       method: 'POST',
       headers: {
@@ -75,7 +96,7 @@ export async function processPayment(transaction: WompiTransaction): Promise<Wom
         currency: transaction.currency,
         customer_email: transaction.customerEmail,
         customer_name: transaction.customerName,
-        payment_method: transaction.paymentMethod,
+        ...paymentBody,
         redirect_url: transaction.redirectUrl,
         metadata: transaction.metadata,
       }),
@@ -168,6 +189,46 @@ export async function tokenizePaymentMethod(card: {
   } catch (error) {
     console.error('Wompi tokenization error:', error)
     return null
+  }
+}
+
+/**
+ * Crea un payment_source reusable a partir de un token de tarjeta (un solo uso).
+ * El token se genera en el navegador (browser → Wompi directo), así el servidor
+ * nunca ve el número de tarjeta. El id devuelto (numérico) se cobra recurrentemente
+ * vía processPayment({ paymentSourceId }). POST /payment_sources.
+ */
+export async function createPaymentSource(
+  cardToken: string,
+  customerEmail: string,
+): Promise<WompiPaymentSource> {
+  const acceptanceToken = await getAcceptanceToken()
+  const res = await fetch(`${WOMPI_API_URL}/payment_sources`, {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${WOMPI_PRIVATE_KEY}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      type: 'CARD',
+      token: cardToken,
+      customer_email: customerEmail,
+      acceptance_token: acceptanceToken,
+    }),
+  })
+  const data = await res.json()
+  if (!res.ok || !data.data?.id) {
+    const msg = data?.error?.messages?.[0] ?? data?.error?.reason ?? data?.error ?? 'Error creando fuente de pago'
+    throw new Error(typeof msg === 'string' ? msg : JSON.stringify(msg))
+  }
+  const src = data.data
+  return {
+    id:       String(src.id),
+    last4:    src.public_data?.last_four ?? '****',
+    brand:    src.public_data?.brand ?? src.type ?? 'CARD',
+    expMonth: src.public_data?.exp_month ?? '',
+    expYear:  src.public_data?.exp_year ?? '',
+    holder:   src.public_data?.name ?? '',
   }
 }
 

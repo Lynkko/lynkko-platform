@@ -90,10 +90,8 @@ export async function GET(req: NextRequest) {
           currency: invoice.currency,
           customerEmail: 'billing@example.com', // Should come from tenant
           customerName: invoice.tenantId,
-          paymentMethod: {
-            type: 'CARD',
-            token: paymentMethod.token,
-          },
+          // paymentMethods.token guarda el id del payment_source reusable → cobro recurrente.
+          paymentSourceId: paymentMethod.token,
           metadata: {
             invoiceId: invoice.id,
             subscriptionId: subscription.id,
