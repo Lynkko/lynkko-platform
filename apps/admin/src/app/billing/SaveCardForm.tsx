@@ -27,6 +27,21 @@ export function SaveCardForm({
   const [error, setError] = useState<string | null>(null)
   const [form, setForm] = useState({ number: '', exp: '', cvc: '', holder: '', email: '' })
 
+  // Máscaras de entrada: número en grupos de 4, MM/AA con barra automática, CVC solo dígitos.
+  const fmtNumber = (v: string) => v.replace(/\D/g, '').slice(0, 19).replace(/(.{4})/g, '$1 ').trim()
+  const fmtExp = (v: string) => {
+    const d = v.replace(/\D/g, '').slice(0, 4)
+    return d.length >= 3 ? `${d.slice(0, 2)}/${d.slice(2)}` : d
+  }
+  const fmtCvc = (v: string) => v.replace(/\D/g, '').slice(0, 4)
+  const brandOf = (v: string) => {
+    const n = v.replace(/\D/g, '')
+    if (/^4/.test(n)) return 'VISA'
+    if (/^(5[1-5]|2[2-7])/.test(n)) return 'MC'
+    if (/^3[47]/.test(n)) return 'AMEX'
+    return ''
+  }
+
   async function submit(e: React.FormEvent) {
     e.preventDefault()
     setError(null)
@@ -114,13 +129,18 @@ export function SaveCardForm({
         </div>
       ) : (
         <form onSubmit={submit} style={{ marginTop: 8, background: '#fff', border: '1px solid #e3e6ef', borderRadius: 12, padding: 16, display: 'grid', gap: 10 }}>
-          <input style={input} placeholder="Número de tarjeta" inputMode="numeric" autoComplete="cc-number" required
-            value={form.number} onChange={(e) => setForm({ ...form, number: e.target.value })} />
+          <div style={{ position: 'relative' }}>
+            <input style={{ ...input, paddingRight: 56, letterSpacing: '0.06em' }} placeholder="1234 5678 9012 3456" inputMode="numeric" autoComplete="cc-number" required
+              value={form.number} onChange={(e) => setForm({ ...form, number: fmtNumber(e.target.value) })} />
+            {brandOf(form.number) && (
+              <span style={{ position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)', fontSize: 11, fontWeight: 800, color: '#5145e6' }}>{brandOf(form.number)}</span>
+            )}
+          </div>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
-            <input style={input} placeholder="MM/AA" autoComplete="cc-exp" required
-              value={form.exp} onChange={(e) => setForm({ ...form, exp: e.target.value })} />
+            <input style={input} placeholder="MM/AA" inputMode="numeric" autoComplete="cc-exp" required maxLength={5}
+              value={form.exp} onChange={(e) => setForm({ ...form, exp: fmtExp(e.target.value) })} />
             <input style={input} placeholder="CVC" inputMode="numeric" autoComplete="cc-csc" required
-              value={form.cvc} onChange={(e) => setForm({ ...form, cvc: e.target.value })} />
+              value={form.cvc} onChange={(e) => setForm({ ...form, cvc: fmtCvc(e.target.value) })} />
           </div>
           <input style={input} placeholder="Nombre del titular" autoComplete="cc-name" required
             value={form.holder} onChange={(e) => setForm({ ...form, holder: e.target.value })} />
