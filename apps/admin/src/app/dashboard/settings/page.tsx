@@ -1,15 +1,19 @@
 import { db, platformSchema } from '@/lib/db'
-import { eq } from 'drizzle-orm'
+import { inArray } from 'drizzle-orm'
 import { Card, CardContent, CardHeader, CardTitle } from '@lynkko/ui'
 import { BusinessTypesManager } from './BusinessTypesManager'
+import { WompiModeToggle } from './WompiModeToggle'
 
 export default async function SettingsPage() {
-  const [settingRow] = await db.select()
+  const rows = await db.select()
     .from(platformSchema.platformSettings)
-    .where(eq(platformSchema.platformSettings.key, 'business_types'))
-    .limit(1)
+    .where(inArray(platformSchema.platformSettings.key, ['business_types', 'wompi_mode']))
 
-  const businessTypes = (settingRow?.value ?? []) as { slug: string; label: string }[]
+  const businessTypes = (rows.find(r => r.key === 'business_types')?.value ?? []) as { slug: string; label: string }[]
+  const wompiModeRaw = rows.find(r => r.key === 'wompi_mode')?.value
+  const wompiMode: 'test' | 'production' =
+    (typeof wompiModeRaw === 'string' ? wompiModeRaw : (wompiModeRaw as { mode?: string } | null)?.mode) === 'production'
+      ? 'production' : 'test'
 
   return (
     <div>
@@ -17,6 +21,20 @@ export default async function SettingsPage() {
       <p className="text-muted-foreground text-sm mb-8">Ajustes globales de Lynkko Platform</p>
 
       <div className="space-y-6">
+        <Card>
+          <CardHeader>
+            <CardTitle>Cobro — modo Wompi</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-sm text-muted-foreground mb-4">
+              Alterna entre <strong>pruebas (sandbox)</strong> y <strong>producción</strong> para el cobro de TODAS las apps.
+              El cambio aplica al instante (portal, guardar-tarjeta, cobros automáticos y webhooks) — no requiere redeploy.
+              Producción cobra dinero real.
+            </p>
+            <WompiModeToggle initialMode={wompiMode} />
+          </CardContent>
+        </Card>
+
         <Card>
           <CardHeader>
             <CardTitle>Tipos de negocio</CardTitle>

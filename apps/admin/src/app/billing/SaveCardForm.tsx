@@ -67,11 +67,22 @@ export function SaveCardForm({
         throw new Error(tokData?.error?.messages?.[0] ?? 'No pudimos validar la tarjeta')
       }
 
-      // 2) crear el payment_source reusable en el servidor
+      // 2) crear el payment_source reusable en el servidor.
+      //    Pasamos la marca/último-4/vencimiento que devuelve la tokenización
+      //    (Wompi no siempre los expone en el payment_source).
+      const d = tokData.data
       const saveRes = await fetch('/api/billing/save-card', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ session: sessionToken, cardToken: tokData.data.id, email: form.email }),
+        body: JSON.stringify({
+          session: sessionToken,
+          cardToken: d.id,
+          email: form.email,
+          brand: d.brand ?? null,
+          last4: d.last_four ?? null,
+          expMonth: d.exp_month ?? null,
+          expYear: d.exp_year ?? null,
+        }),
       })
       const saveData = await saveRes.json()
       if (!saveRes.ok) throw new Error(saveData?.error ?? 'No pudimos guardar la tarjeta')

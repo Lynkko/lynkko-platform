@@ -8,14 +8,12 @@
 import { db, platformSchema } from '@/lib/db'
 import { and, eq, desc } from 'drizzle-orm'
 import { verifySession, integritySignature } from '@/lib/billing-portal'
-import { getTransactionStatus } from '@/lib/wompi'
+import { getTransactionStatus, getWompiConfig } from '@/lib/wompi'
 import { SaveCardForm } from './SaveCardForm'
 
 export const dynamic = 'force-dynamic'
 
 const APP_URL = (process.env.NEXT_PUBLIC_APP_URL ?? 'https://platform.lynkko.co').trim().replace(/\/+$/, '')
-const WOMPI_PUBLIC_KEY = process.env.WOMPI_PUBLIC_KEY ?? ''
-const WOMPI_API_URL = (process.env.WOMPI_API_URL ?? 'https://sandbox.wompi.co/v1').replace(/\/+$/, '')
 const CHECKOUT_URL = 'https://checkout.wompi.co/p/'
 
 function Shell({ children }: { children: React.ReactNode }) {
@@ -43,6 +41,7 @@ export default async function BillingPortal({
     )
   }
   const tenantId = session.tenantId
+  const wompi = await getWompiConfig()
 
   // Retorno de Wompi: verificar transacción y marcar la factura pagada (idempotente).
   let paidNotice: string | null = null
@@ -130,7 +129,7 @@ export default async function BillingPortal({
           {invoices.map((inv) => {
             const amountInCents = Math.round(Number(inv.total) * 100)
             const reference = inv.number
-            const sig = integritySignature(reference, amountInCents, inv.currency)
+            const sig = integritySignature(reference, amountInCents, inv.currency, wompi.integritySecret)
             const redirectUrl = `${APP_URL}/billing?session=${encodeURIComponent(sp.session ?? '')}&invoice=${inv.id}`
             return (
               <div key={inv.id} style={{ background: '#fff', border: '1px solid #e3e6ef', borderRadius: 12, padding: '14px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12 }}>
@@ -139,7 +138,7 @@ export default async function BillingPortal({
                   <div style={{ fontSize: 13, color: '#6a7086' }}>{fmt(Number(inv.total), inv.currency)}</div>
                 </div>
                 <form action={CHECKOUT_URL} method="GET">
-                  <input type="hidden" name="public-key" value={WOMPI_PUBLIC_KEY} />
+                  <input type="hidden" name="public-key" value={wompi.publicKey} />
                   <input type="hidden" name="currency" value={inv.currency} />
                   <input type="hidden" name="amount-in-cents" value={amountInCents} />
                   <input type="hidden" name="reference" value={reference} />
@@ -153,10 +152,10 @@ export default async function BillingPortal({
         </div>
       </section>
 
-      {WOMPI_PUBLIC_KEY && sp.session && (
+      {wompi.publicKey && sp.session && (
         <SaveCardForm
-          publicKey={WOMPI_PUBLIC_KEY}
-          wompiBase={WOMPI_API_URL}
+          publicKey={wompi.publicKey}
+          wompiBase={wompi.apiUrl}
           sessionToken={sp.session}
           existingCard={savedCard ? { brand: savedCard.brand ?? 'CARD', last4: savedCard.last4 ?? '****' } : null}
         />

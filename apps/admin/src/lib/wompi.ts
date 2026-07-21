@@ -1,11 +1,65 @@
 /**
  * Wompi Payment Integration
  * https://developer.wompi.co/
+ *
+ * MODO test/producción: la config (llaves + URL) se resuelve en runtime desde
+ * `platform_settings.wompi_mode` ('test' | 'production'). Así un toggle en el panel
+ * alterna sandbox↔producción sin redeploy ni cambiar variables. Cada set de llaves
+ * vive en env: test = WOMPI_{PUBLIC,PRIVATE,WEBHOOK,INTEGRITY}_*; prod = *_PROD.
  */
+import { eq } from 'drizzle-orm'
+import { db, platformSchema } from './db'
 
-const WOMPI_API_URL = process.env.WOMPI_API_URL || 'https://api.wompi.co'
-const WOMPI_PRIVATE_KEY = process.env.WOMPI_PRIVATE_KEY!
-const WOMPI_PUBLIC_KEY = process.env.WOMPI_PUBLIC_KEY!
+export type WompiMode = 'test' | 'production'
+
+export interface WompiConfig {
+  mode: WompiMode
+  apiUrl: string
+  publicKey: string
+  privateKey: string
+  webhookSecret: string
+  integritySecret: string
+}
+
+/** Lee el modo activo desde platform_settings (fallback env WOMPI_MODE, luego 'test'). */
+export async function getWompiMode(): Promise<WompiMode> {
+  try {
+    const [row] = await db
+      .select({ value: platformSchema.platformSettings.value })
+      .from(platformSchema.platformSettings)
+      .where(eq(platformSchema.platformSettings.key, 'wompi_mode'))
+      .limit(1)
+    const v = row?.value as unknown
+    const mode = typeof v === 'string' ? v : (v as { mode?: string } | null)?.mode
+    if (mode === 'production' || mode === 'test') return mode
+  } catch {
+    // sin DB → cae a env
+  }
+  return process.env.WOMPI_MODE === 'production' ? 'production' : 'test'
+}
+
+/** Resuelve las llaves + URL de Wompi según el modo activo. */
+export async function getWompiConfig(): Promise<WompiConfig> {
+  const mode = await getWompiMode()
+  if (mode === 'production') {
+    return {
+      mode,
+      apiUrl: (process.env.WOMPI_API_URL_PROD ?? 'https://production.wompi.co/v1').replace(/\/+$/, ''),
+      publicKey: process.env.WOMPI_PUBLIC_KEY_PROD ?? '',
+      privateKey: process.env.WOMPI_PRIVATE_KEY_PROD ?? '',
+      webhookSecret: process.env.WOMPI_WEBHOOK_SECRET_PROD ?? '',
+      integritySecret: process.env.WOMPI_INTEGRITY_SECRET_PROD ?? '',
+    }
+  }
+  return {
+    mode,
+    apiUrl: (process.env.WOMPI_API_URL ?? 'https://sandbox.wompi.co/v1').replace(/\/+$/, ''),
+    publicKey: process.env.WOMPI_PUBLIC_KEY ?? '',
+    privateKey: process.env.WOMPI_PRIVATE_KEY ?? '',
+    webhookSecret: process.env.WOMPI_WEBHOOK_SECRET ?? '',
+    integritySecret: process.env.WOMPI_INTEGRITY_SECRET ?? '',
+  }
+}
 
 export interface WompiTransaction {
   reference: string
@@ -58,9 +112,10 @@ export interface WompiResponse {
  * Obtiene el acceptance_token del comercio (Wompi lo exige en cada transacción:
  * es la aceptación de términos del titular). GET /merchants/{public_key}.
  */
-export async function getAcceptanceToken(): Promise<string | null> {
+export async function getAcceptanceToken(cfg?: WompiConfig): Promise<string | null> {
   try {
-    const res = await fetch(`${WOMPI_API_URL}/merchants/${WOMPI_PUBLIC_KEY}`)
+    const { apiUrl, publicKey } = cfg ?? (await getWompiConfig())
+    const res = await fetch(`${apiUrl}/merchants/${publicKey}`)
     const data = await res.json()
     return data?.data?.presigned_acceptance?.acceptance_token ?? null
   } catch (error) {
@@ -74,7 +129,8 @@ export async function getAcceptanceToken(): Promise<string | null> {
  */
 export async function processPayment(transaction: WompiTransaction): Promise<WompiResponse> {
   try {
-    const acceptanceToken = await getAcceptanceToken()
+    const cfg = await getWompiConfig()
+    const acceptanceToken = await getAcceptanceToken(cfg)
     // Cobro recurrente (payment_source_id) vs pago único (token de tarjeta).
     // Con payment_source_id, Wompi exige payment_method con installments.
     const paymentBody = transaction.paymentSourceId
@@ -83,10 +139,10 @@ export async function processPayment(transaction: WompiTransaction): Promise<Wom
           payment_method: { installments: transaction.paymentMethod?.installments ?? 1 },
         }
       : { payment_method: transaction.paymentMethod }
-    const response = await fetch(`${WOMPI_API_URL}/transactions`, {
+    const response = await fetch(`${cfg.apiUrl}/transactions`, {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${WOMPI_PRIVATE_KEY}`,
+        'Authorization': `Bearer ${cfg.privateKey}`,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
@@ -128,10 +184,11 @@ export async function processPayment(transaction: WompiTransaction): Promise<Wom
  */
 export async function getTransactionStatus(transactionId: string): Promise<WompiResponse> {
   try {
-    const response = await fetch(`${WOMPI_API_URL}/transactions/${transactionId}`, {
+    const cfg = await getWompiConfig()
+    const response = await fetch(`${cfg.apiUrl}/transactions/${transactionId}`, {
       method: 'GET',
       headers: {
-        'Authorization': `Bearer ${WOMPI_PRIVATE_KEY}`,
+        'Authorization': `Bearer ${cfg.privateKey}`,
       },
     })
 
@@ -160,11 +217,12 @@ export async function tokenizePaymentMethod(card: {
   cardholderName: string
 }): Promise<{ token: string } | null> {
   try {
+    const { apiUrl, publicKey } = await getWompiConfig()
     // Wompi: POST /v1/tokens/cards con Bearer <public_key> y body plano.
-    const response = await fetch(`${WOMPI_API_URL}/tokens/cards`, {
+    const response = await fetch(`${apiUrl}/tokens/cards`, {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${WOMPI_PUBLIC_KEY}`,
+        'Authorization': `Bearer ${publicKey}`,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
@@ -202,11 +260,12 @@ export async function createPaymentSource(
   cardToken: string,
   customerEmail: string,
 ): Promise<WompiPaymentSource> {
-  const acceptanceToken = await getAcceptanceToken()
-  const res = await fetch(`${WOMPI_API_URL}/payment_sources`, {
+  const cfg = await getWompiConfig()
+  const acceptanceToken = await getAcceptanceToken(cfg)
+  const res = await fetch(`${cfg.apiUrl}/payment_sources`, {
     method: 'POST',
     headers: {
-      'Authorization': `Bearer ${WOMPI_PRIVATE_KEY}`,
+      'Authorization': `Bearer ${cfg.privateKey}`,
       'Content-Type': 'application/json',
     },
     body: JSON.stringify({

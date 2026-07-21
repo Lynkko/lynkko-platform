@@ -37,6 +37,8 @@ export async function GET(req: NextRequest) {
         billingCycle: platformSchema.billingCycles,
         subscription: platformSchema.subscriptions,
         paymentMethod: platformSchema.paymentMethods,
+        tenantName: platformSchema.tenants.name,
+        tenantEmail: platformSchema.tenants.contactEmail,
       })
       .from(platformSchema.invoices)
       .innerJoin(
@@ -55,6 +57,10 @@ export async function GET(req: NextRequest) {
           eq(platformSchema.paymentMethods.isActive, true)
         )
       )
+      .leftJoin(
+        platformSchema.tenants,
+        eq(platformSchema.tenants.id, platformSchema.invoices.tenantId)
+      )
       .where(
         and(
           eq(platformSchema.invoices.status, 'open'),
@@ -66,7 +72,7 @@ export async function GET(req: NextRequest) {
 
     for (const row of invoicesToPay) {
       try {
-        const { invoice, billingCycle, subscription, paymentMethod } = row
+        const { invoice, billingCycle, subscription, paymentMethod, tenantName, tenantEmail } = row
 
         // Check if tenant has a default payment method
         if (!paymentMethod || !paymentMethod.token) {
@@ -89,8 +95,8 @@ export async function GET(req: NextRequest) {
           reference,
           amountInCents,
           currency: invoice.currency,
-          customerEmail: 'billing@example.com', // Should come from tenant
-          customerName: invoice.tenantId,
+          customerEmail: tenantEmail ?? 'facturacion@lynkko.co',
+          customerName: tenantName ?? invoice.tenantId,
           // paymentMethods.token guarda el id del payment_source reusable → cobro recurrente.
           paymentSourceId: paymentMethod.token,
           metadata: {

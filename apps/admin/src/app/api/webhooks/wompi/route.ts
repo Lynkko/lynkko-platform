@@ -1,11 +1,9 @@
 import { db, platformSchema } from '@/lib/db'
 import { eq } from 'drizzle-orm'
 import { ok, badRequest, serverError } from '@lynkko/utils'
-import { verifyWebhookSignature, parseWebhookPayload } from '@/lib/wompi'
+import { verifyWebhookSignature, parseWebhookPayload, getWompiConfig } from '@/lib/wompi'
 import { logAuditEvent } from '@/lib/audit-log'
 import type { NextRequest } from 'next/server'
-
-const WOMPI_WEBHOOK_SECRET = process.env.WOMPI_WEBHOOK_SECRET
 
 /**
  * POST /api/webhooks/wompi
@@ -17,12 +15,15 @@ export async function POST(req: NextRequest) {
     const body = await req.text()
     const signature = req.headers.get('x-wompi-signature')
 
+    // Secret del modo activo (test/producción)
+    const { webhookSecret } = await getWompiConfig()
+
     // Verify webhook signature
-    if (!signature || !WOMPI_WEBHOOK_SECRET) {
+    if (!signature || !webhookSecret) {
       return badRequest('Missing signature or webhook secret')
     }
 
-    const isValid = verifyWebhookSignature(body, signature, WOMPI_WEBHOOK_SECRET)
+    const isValid = verifyWebhookSignature(body, signature, webhookSecret)
     if (!isValid) {
       return badRequest('Invalid webhook signature')
     }

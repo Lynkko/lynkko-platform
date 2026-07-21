@@ -40,16 +40,22 @@ export async function POST(req: NextRequest) {
     .set({ isDefault: false, updatedAt: new Date() })
     .where(eq(platformSchema.paymentMethods.tenantId, tenantId))
 
+  // Preferir la marca/último-4/vencimiento que la tokenización devolvió al cliente
+  // (Wompi no siempre los expone en el payment_source → antes quedaba "CARD"/null).
+  const brand = (body?.brand as string | undefined)?.toUpperCase() || source.brand
+  const last4 = (body?.last4 as string | undefined) || source.last4
+  const expMonth = (body?.expMonth as string | undefined) || source.expMonth
+  const expYear = (body?.expYear as string | undefined) || source.expYear
   const expiresAt =
-    source.expMonth && source.expYear
-      ? new Date(Number(`20${source.expYear.slice(-2)}`), Number(source.expMonth), 0)
+    expMonth && expYear
+      ? new Date(Number(`20${String(expYear).slice(-2)}`), Number(expMonth), 0)
       : null
 
   await db.insert(platformSchema.paymentMethods).values({
     tenantId,
     type: 'CARD',
-    brand: source.brand,
-    lastFour: source.last4,
+    brand,
+    lastFour: last4,
     token: source.id,
     isDefault: true,
     isActive: true,
@@ -58,7 +64,7 @@ export async function POST(req: NextRequest) {
 
   return NextResponse.json({
     ok: true,
-    card: { brand: source.brand, last4: source.last4, holder: source.holder },
+    card: { brand, last4, holder: source.holder },
   })
 }
 

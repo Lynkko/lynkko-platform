@@ -8,7 +8,6 @@
 import crypto from 'crypto'
 
 const SECRET = process.env.PLATFORM_WEBHOOK_SECRET ?? process.env.CRON_SECRET ?? 'dev-secret'
-const INTEGRITY = process.env.WOMPI_INTEGRITY_SECRET ?? ''
 
 /** Firma un token de portal para un tenant (base64url de `tenantId.exp.sig`). */
 export function signSession(tenantId: string, ttlSeconds = 1800): string {
@@ -36,7 +35,13 @@ export function verifySession(token: string): { tenantId: string } | null {
 /**
  * Firma de integridad que exige el Web Checkout de Wompi:
  * SHA256(`${reference}${amountInCents}${currency}${integritySecret}`).
+ * El `integritySecret` se pasa resuelto según el modo (test/producción).
  */
-export function integritySignature(reference: string, amountInCents: number, currency: string): string {
-  return crypto.createHash('sha256').update(`${reference}${amountInCents}${currency}${INTEGRITY}`).digest('hex')
+export function integritySignature(
+  reference: string,
+  amountInCents: number,
+  currency: string,
+  integritySecret: string,
+): string {
+  return crypto.createHash('sha256').update(`${reference}${amountInCents}${currency}${integritySecret}`).digest('hex')
 }
